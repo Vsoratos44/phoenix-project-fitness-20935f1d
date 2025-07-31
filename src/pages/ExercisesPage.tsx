@@ -149,7 +149,11 @@ export default function ExercisesPage() {
       {/* Exercise Categories */}
       <div className="grid grid-cols-2 md:grid-cols-5 gap-4">
         {exerciseCategories.map((category) => (
-          <Card key={category.name} className="hover:shadow-md transition-shadow cursor-pointer">
+          <Card 
+            key={category.name} 
+            className="hover:shadow-md transition-shadow cursor-pointer"
+            onClick={() => setSearchTerm(category.name.toLowerCase())}
+          >
             <CardContent className="p-4 text-center">
               <div className={`h-12 w-12 rounded-full ${category.color} flex items-center justify-center mx-auto mb-3`}>
                 <category.icon className="h-6 w-6 text-white" />
