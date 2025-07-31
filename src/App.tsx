@@ -16,13 +16,16 @@ import RewardsPage from "./pages/RewardsPage";
 import AIWorkoutPage from "./pages/AIWorkoutPage";
 import NutritionPage from "./pages/NutritionPage";
 import WorkoutCreatorPage from "./pages/WorkoutCreatorPage";
+import PeriodizationPage from "./pages/PeriodizationPage";
+import { AuthProvider } from "./hooks/useAuth";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
 
 const App = () => (
   <QueryClientProvider client={queryClient}>
-    <TooltipProvider>
+    <AuthProvider>
+      <TooltipProvider>
       <Toaster />
       <Sonner />
       <BrowserRouter>
@@ -39,6 +42,7 @@ const App = () => (
             <Route path="ai-workout" element={<AIWorkoutPage />} />
             <Route path="nutrition" element={<NutritionPage />} />
             <Route path="workout-creator" element={<WorkoutCreatorPage />} />
+            <Route path="periodization" element={<PeriodizationPage />} />
             <Route path="rewards" element={<RewardsPage />} />
             {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
             <Route path="*" element={<NotFound />} />
@@ -46,6 +50,7 @@ const App = () => (
         </Routes>
       </BrowserRouter>
     </TooltipProvider>
+    </AuthProvider>
   </QueryClientProvider>
 );
 
