@@ -148,6 +148,48 @@ export type Database = {
           },
         ]
       }
+      ai_workout_generations: {
+        Row: {
+          created_at: string
+          feedback_notes: string | null
+          feedback_rating: number | null
+          generated_workout: Json
+          generation_time_ms: number | null
+          id: string
+          model_used: string | null
+          prompt: string
+          tokens_used: number | null
+          user_id: string
+          user_preferences: Json | null
+        }
+        Insert: {
+          created_at?: string
+          feedback_notes?: string | null
+          feedback_rating?: number | null
+          generated_workout: Json
+          generation_time_ms?: number | null
+          id?: string
+          model_used?: string | null
+          prompt: string
+          tokens_used?: number | null
+          user_id: string
+          user_preferences?: Json | null
+        }
+        Update: {
+          created_at?: string
+          feedback_notes?: string | null
+          feedback_rating?: number | null
+          generated_workout?: Json
+          generation_time_ms?: number | null
+          id?: string
+          model_used?: string | null
+          prompt?: string
+          tokens_used?: number | null
+          user_id?: string
+          user_preferences?: Json | null
+        }
+        Relationships: []
+      }
       biometric_logs: {
         Row: {
           blood_pressure_diastolic: number | null
@@ -332,6 +374,48 @@ export type Database = {
           },
         ]
       }
+      events: {
+        Row: {
+          created_at: string
+          error_message: string | null
+          event_data: Json
+          event_type: string
+          id: string
+          max_retries: number | null
+          processed: boolean | null
+          processed_at: string | null
+          retry_count: number | null
+          scheduled_for: string | null
+          user_id: string | null
+        }
+        Insert: {
+          created_at?: string
+          error_message?: string | null
+          event_data?: Json
+          event_type: string
+          id?: string
+          max_retries?: number | null
+          processed?: boolean | null
+          processed_at?: string | null
+          retry_count?: number | null
+          scheduled_for?: string | null
+          user_id?: string | null
+        }
+        Update: {
+          created_at?: string
+          error_message?: string | null
+          event_data?: Json
+          event_type?: string
+          id?: string
+          max_retries?: number | null
+          processed?: boolean | null
+          processed_at?: string | null
+          retry_count?: number | null
+          scheduled_for?: string | null
+          user_id?: string | null
+        }
+        Relationships: []
+      }
       exercise_categories: {
         Row: {
           color_hex: string | null
@@ -395,13 +479,6 @@ export type Database = {
         }
         Relationships: [
           {
-            foreignKeyName: "exercise_logs_exercise_id_fkey"
-            columns: ["exercise_id"]
-            isOneToOne: false
-            referencedRelation: "exercises"
-            referencedColumns: ["id"]
-          },
-          {
             foreignKeyName: "exercise_logs_workout_session_id_fkey"
             columns: ["workout_session_id"]
             isOneToOne: false
@@ -420,12 +497,14 @@ export type Database = {
           description: string | null
           difficulty_level: string | null
           equipment_required: Json | null
+          exercise_type: string | null
           form_cues: Json | null
           id: string
           instructions: Json | null
           is_approved: boolean | null
           is_bodyweight: boolean | null
           is_unilateral: boolean | null
+          media_assets: Json | null
           met_value: number | null
           name: string
           primary_muscle_groups: string[] | null
@@ -445,12 +524,14 @@ export type Database = {
           description?: string | null
           difficulty_level?: string | null
           equipment_required?: Json | null
+          exercise_type?: string | null
           form_cues?: Json | null
           id?: string
           instructions?: Json | null
           is_approved?: boolean | null
           is_bodyweight?: boolean | null
           is_unilateral?: boolean | null
+          media_assets?: Json | null
           met_value?: number | null
           name: string
           primary_muscle_groups?: string[] | null
@@ -470,12 +551,14 @@ export type Database = {
           description?: string | null
           difficulty_level?: string | null
           equipment_required?: Json | null
+          exercise_type?: string | null
           form_cues?: Json | null
           id?: string
           instructions?: Json | null
           is_approved?: boolean | null
           is_bodyweight?: boolean | null
           is_unilateral?: boolean | null
+          media_assets?: Json | null
           met_value?: number | null
           name?: string
           primary_muscle_groups?: string[] | null
@@ -494,17 +577,11 @@ export type Database = {
             referencedRelation: "exercise_categories"
             referencedColumns: ["id"]
           },
-          {
-            foreignKeyName: "exercises_created_by_fkey"
-            columns: ["created_by"]
-            isOneToOne: false
-            referencedRelation: "profiles"
-            referencedColumns: ["user_id"]
-          },
         ]
       }
       foods: {
         Row: {
+          allergen_info: Json | null
           barcode: string | null
           brand: string | null
           calories_per_100g: number | null
@@ -512,20 +589,25 @@ export type Database = {
           category: string | null
           created_at: string
           created_by: string | null
+          dietary_labels: Json | null
           fat_per_100g: number | null
           fiber_per_100g: number | null
           food_group: string | null
           id: string
           is_verified: boolean | null
+          micronutrients: Json | null
           name: string
           protein_per_100g: number | null
           serving_size_description: string | null
           serving_size_g: number | null
+          serving_sizes: Json | null
           sodium_per_100g: number | null
           sugar_per_100g: number | null
+          traffic_light_category: string | null
           updated_at: string
         }
         Insert: {
+          allergen_info?: Json | null
           barcode?: string | null
           brand?: string | null
           calories_per_100g?: number | null
@@ -533,20 +615,25 @@ export type Database = {
           category?: string | null
           created_at?: string
           created_by?: string | null
+          dietary_labels?: Json | null
           fat_per_100g?: number | null
           fiber_per_100g?: number | null
           food_group?: string | null
           id?: string
           is_verified?: boolean | null
+          micronutrients?: Json | null
           name: string
           protein_per_100g?: number | null
           serving_size_description?: string | null
           serving_size_g?: number | null
+          serving_sizes?: Json | null
           sodium_per_100g?: number | null
           sugar_per_100g?: number | null
+          traffic_light_category?: string | null
           updated_at?: string
         }
         Update: {
+          allergen_info?: Json | null
           barcode?: string | null
           brand?: string | null
           calories_per_100g?: number | null
@@ -554,28 +641,24 @@ export type Database = {
           category?: string | null
           created_at?: string
           created_by?: string | null
+          dietary_labels?: Json | null
           fat_per_100g?: number | null
           fiber_per_100g?: number | null
           food_group?: string | null
           id?: string
           is_verified?: boolean | null
+          micronutrients?: Json | null
           name?: string
           protein_per_100g?: number | null
           serving_size_description?: string | null
           serving_size_g?: number | null
+          serving_sizes?: Json | null
           sodium_per_100g?: number | null
           sugar_per_100g?: number | null
+          traffic_light_category?: string | null
           updated_at?: string
         }
-        Relationships: [
-          {
-            foreignKeyName: "foods_created_by_fkey"
-            columns: ["created_by"]
-            isOneToOne: false
-            referencedRelation: "profiles"
-            referencedColumns: ["user_id"]
-          },
-        ]
+        Relationships: []
       }
       marketplace_vendors: {
         Row: {
@@ -798,15 +881,7 @@ export type Database = {
           user_id?: string
           water_target_ml?: number | null
         }
-        Relationships: [
-          {
-            foreignKeyName: "nutrition_goals_user_id_fkey"
-            columns: ["user_id"]
-            isOneToOne: false
-            referencedRelation: "profiles"
-            referencedColumns: ["user_id"]
-          },
-        ]
+        Relationships: []
       }
       nutrition_logs: {
         Row: {
@@ -870,13 +945,6 @@ export type Database = {
             isOneToOne: false
             referencedRelation: "foods"
             referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "nutrition_logs_user_id_fkey"
-            columns: ["user_id"]
-            isOneToOne: false
-            referencedRelation: "profiles"
-            referencedColumns: ["user_id"]
           },
         ]
       }
@@ -957,13 +1025,6 @@ export type Database = {
           workout_session_id?: string | null
         }
         Relationships: [
-          {
-            foreignKeyName: "personal_records_exercise_id_fkey"
-            columns: ["exercise_id"]
-            isOneToOne: false
-            referencedRelation: "exercises"
-            referencedColumns: ["id"]
-          },
           {
             foreignKeyName: "personal_records_set_log_id_fkey"
             columns: ["set_log_id"]
@@ -1118,6 +1179,96 @@ export type Database = {
           user_id?: string
           weight_kg?: number | null
           workout_frequency_per_week?: number | null
+        }
+        Relationships: []
+      }
+      recipes: {
+        Row: {
+          cook_time_minutes: number | null
+          created_at: string
+          created_by: string | null
+          cuisine_type: string | null
+          description: string | null
+          dietary_labels: Json | null
+          difficulty_level: string | null
+          id: string
+          image_url: string | null
+          ingredients: Json
+          instructions: Json
+          is_verified: boolean | null
+          name: string
+          prep_time_minutes: number | null
+          servings: number | null
+          total_nutrition: Json | null
+          updated_at: string
+        }
+        Insert: {
+          cook_time_minutes?: number | null
+          created_at?: string
+          created_by?: string | null
+          cuisine_type?: string | null
+          description?: string | null
+          dietary_labels?: Json | null
+          difficulty_level?: string | null
+          id?: string
+          image_url?: string | null
+          ingredients?: Json
+          instructions?: Json
+          is_verified?: boolean | null
+          name: string
+          prep_time_minutes?: number | null
+          servings?: number | null
+          total_nutrition?: Json | null
+          updated_at?: string
+        }
+        Update: {
+          cook_time_minutes?: number | null
+          created_at?: string
+          created_by?: string | null
+          cuisine_type?: string | null
+          description?: string | null
+          dietary_labels?: Json | null
+          difficulty_level?: string | null
+          id?: string
+          image_url?: string | null
+          ingredients?: Json
+          instructions?: Json
+          is_verified?: boolean | null
+          name?: string
+          prep_time_minutes?: number | null
+          servings?: number | null
+          total_nutrition?: Json | null
+          updated_at?: string
+        }
+        Relationships: []
+      }
+      sep_activity_types: {
+        Row: {
+          base_points: number
+          category: string | null
+          created_at: string
+          description: string | null
+          icon_name: string | null
+          id: string
+          name: string
+        }
+        Insert: {
+          base_points: number
+          category?: string | null
+          created_at?: string
+          description?: string | null
+          icon_name?: string | null
+          id?: string
+          name: string
+        }
+        Update: {
+          base_points?: number
+          category?: string | null
+          created_at?: string
+          description?: string | null
+          icon_name?: string | null
+          id?: string
+          name?: string
         }
         Relationships: []
       }
@@ -1442,6 +1593,7 @@ export type Database = {
           id: string
           is_featured: boolean | null
           name: string
+          schedule: Json | null
           thumbnail_url: string | null
           updated_at: string
           workouts_per_week: number | null
@@ -1457,6 +1609,7 @@ export type Database = {
           id?: string
           is_featured?: boolean | null
           name: string
+          schedule?: Json | null
           thumbnail_url?: string | null
           updated_at?: string
           workouts_per_week?: number | null
@@ -1472,19 +1625,12 @@ export type Database = {
           id?: string
           is_featured?: boolean | null
           name?: string
+          schedule?: Json | null
           thumbnail_url?: string | null
           updated_at?: string
           workouts_per_week?: number | null
         }
-        Relationships: [
-          {
-            foreignKeyName: "workout_programs_created_by_fkey"
-            columns: ["created_by"]
-            isOneToOne: false
-            referencedRelation: "profiles"
-            referencedColumns: ["user_id"]
-          },
-        ]
+        Relationships: []
       }
       workout_sessions: {
         Row: {
@@ -1558,13 +1704,6 @@ export type Database = {
             referencedRelation: "profiles"
             referencedColumns: ["user_id"]
           },
-          {
-            foreignKeyName: "workout_sessions_workout_template_id_fkey"
-            columns: ["workout_template_id"]
-            isOneToOne: false
-            referencedRelation: "workout_templates"
-            referencedColumns: ["id"]
-          },
         ]
       }
       workout_templates: {
@@ -1576,6 +1715,7 @@ export type Database = {
           id: string
           name: string
           program_id: string | null
+          routine_type: string | null
           total_exercises: number | null
           updated_at: string
           week_number: number | null
@@ -1588,6 +1728,7 @@ export type Database = {
           id?: string
           name: string
           program_id?: string | null
+          routine_type?: string | null
           total_exercises?: number | null
           updated_at?: string
           week_number?: number | null
@@ -1600,6 +1741,7 @@ export type Database = {
           id?: string
           name?: string
           program_id?: string | null
+          routine_type?: string | null
           total_exercises?: number | null
           updated_at?: string
           week_number?: number | null
