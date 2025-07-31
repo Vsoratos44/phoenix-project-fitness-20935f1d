@@ -44,6 +44,7 @@ const App = () => (
             <Route path="workout-creator" element={<WorkoutCreatorPage />} />
             <Route path="periodization" element={<PeriodizationPage />} />
             <Route path="rewards" element={<RewardsPage />} />
+            <Route path="points" element={<RewardsPage />} />
             {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
             <Route path="*" element={<NotFound />} />
           </Route>
