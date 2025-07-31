@@ -880,6 +880,33 @@ export type Database = {
           },
         ]
       }
+      onboarding_responses: {
+        Row: {
+          created_at: string
+          id: string
+          question_key: string
+          response: Json
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          question_key: string
+          response: Json
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          question_key?: string
+          response?: Json
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
       personal_records: {
         Row: {
           achieved_at: string
@@ -1033,6 +1060,8 @@ export type Database = {
           height_cm: number | null
           id: string
           medical_conditions: Json | null
+          onboarding_completed: boolean | null
+          onboarding_step: number | null
           phone_number: string | null
           preferred_workout_duration: number | null
           primary_goal: string | null
@@ -1055,6 +1084,8 @@ export type Database = {
           height_cm?: number | null
           id?: string
           medical_conditions?: Json | null
+          onboarding_completed?: boolean | null
+          onboarding_step?: number | null
           phone_number?: string | null
           preferred_workout_duration?: number | null
           primary_goal?: string | null
@@ -1077,6 +1108,8 @@ export type Database = {
           height_cm?: number | null
           id?: string
           medical_conditions?: Json | null
+          onboarding_completed?: boolean | null
+          onboarding_step?: number | null
           phone_number?: string | null
           preferred_workout_duration?: number | null
           primary_goal?: string | null
