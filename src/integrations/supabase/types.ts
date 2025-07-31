@@ -66,10 +66,12 @@ export type Database = {
           content: string | null
           created_at: string
           id: string
+          is_shareable: boolean | null
           likes_count: number | null
           metadata: Json | null
           privacy_level: string | null
           reference_id: string | null
+          social_shares: Json | null
           user_id: string
         }
         Insert: {
@@ -78,10 +80,12 @@ export type Database = {
           content?: string | null
           created_at?: string
           id?: string
+          is_shareable?: boolean | null
           likes_count?: number | null
           metadata?: Json | null
           privacy_level?: string | null
           reference_id?: string | null
+          social_shares?: Json | null
           user_id: string
         }
         Update: {
@@ -90,10 +94,12 @@ export type Database = {
           content?: string | null
           created_at?: string
           id?: string
+          is_shareable?: boolean | null
           likes_count?: number | null
           metadata?: Json | null
           privacy_level?: string | null
           reference_id?: string | null
+          social_shares?: Json | null
           user_id?: string
         }
         Relationships: [
@@ -1380,6 +1386,87 @@ export type Database = {
             referencedColumns: ["id"]
           },
         ]
+      }
+      social_posts: {
+        Row: {
+          content_data: Json
+          content_type: string
+          engagement_data: Json | null
+          id: string
+          media_urls: string[] | null
+          platforms: string[]
+          post_text: string | null
+          shared_at: string
+          user_id: string
+        }
+        Insert: {
+          content_data?: Json
+          content_type: string
+          engagement_data?: Json | null
+          id?: string
+          media_urls?: string[] | null
+          platforms?: string[]
+          post_text?: string | null
+          shared_at?: string
+          user_id: string
+        }
+        Update: {
+          content_data?: Json
+          content_type?: string
+          engagement_data?: Json | null
+          id?: string
+          media_urls?: string[] | null
+          platforms?: string[]
+          post_text?: string | null
+          shared_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
+      social_profiles: {
+        Row: {
+          access_token: string | null
+          created_at: string
+          expires_at: string | null
+          id: string
+          is_active: boolean | null
+          platform: string
+          platform_user_id: string
+          platform_username: string | null
+          profile_data: Json | null
+          refresh_token: string | null
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          access_token?: string | null
+          created_at?: string
+          expires_at?: string | null
+          id?: string
+          is_active?: boolean | null
+          platform: string
+          platform_user_id: string
+          platform_username?: string | null
+          profile_data?: Json | null
+          refresh_token?: string | null
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          access_token?: string | null
+          created_at?: string
+          expires_at?: string | null
+          id?: string
+          is_active?: boolean | null
+          platform?: string
+          platform_user_id?: string
+          platform_username?: string | null
+          profile_data?: Json | null
+          refresh_token?: string | null
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
       }
       subscriptions: {
         Row: {
