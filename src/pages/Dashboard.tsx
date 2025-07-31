@@ -27,8 +27,11 @@ import {
   Utensils,
   Zap
 } from "lucide-react";
+import { useNavigate } from "react-router-dom";
 
 export default function Dashboard() {
+  const navigate = useNavigate();
+
   return (
     <div className="space-y-6">
       {/* Header */}
@@ -41,7 +44,10 @@ export default function Dashboard() {
 
       {/* Phoenix Score & Quick Stats */}
       <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
-        <Card className="relative overflow-hidden border-primary/20 bg-gradient-to-br from-primary/5 to-primary/10">
+        <Card 
+          className="relative overflow-hidden border-primary/20 bg-gradient-to-br from-primary/5 to-primary/10 cursor-pointer hover:shadow-md transition-shadow"
+          onClick={() => navigate('/phoenix-score')}
+        >
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
             <CardTitle className="text-sm font-medium">Phoenix Score</CardTitle>
             <Target className="h-4 w-4 text-primary" />
@@ -54,10 +60,14 @@ export default function Dashboard() {
             <div className="mt-2">
               <Progress value={87} className="h-2" />
             </div>
+            <p className="text-xs text-primary mt-2 font-medium">Click for detailed analysis</p>
           </CardContent>
         </Card>
 
-        <Card>
+        <Card 
+          className="cursor-pointer hover:shadow-md transition-shadow"
+          onClick={() => navigate('/workout-logs')}
+        >
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
             <CardTitle className="text-sm font-medium">This Week</CardTitle>
             <Activity className="h-4 w-4 text-muted-foreground" />
@@ -67,10 +77,14 @@ export default function Dashboard() {
             <p className="text-xs text-muted-foreground">
               2 more than last week
             </p>
+            <p className="text-xs text-primary mt-2 font-medium">View workout history</p>
           </CardContent>
         </Card>
 
-        <Card>
+        <Card 
+          className="cursor-pointer hover:shadow-md transition-shadow"
+          onClick={() => navigate('/rewards')}
+        >
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
             <CardTitle className="text-sm font-medium">SEP Points</CardTitle>
             <Flame className="h-4 w-4 text-fitness-orange" />
@@ -80,6 +94,7 @@ export default function Dashboard() {
             <p className="text-xs text-muted-foreground">
               +120 today
             </p>
+            <p className="text-xs text-fitness-orange mt-2 font-medium">View rewards dashboard</p>
           </CardContent>
         </Card>
 
@@ -143,13 +158,13 @@ export default function Dashboard() {
               </div>
               
               <div className="flex gap-2">
-                <Button className="flex-1" size="lg">
+                <Button className="flex-1" size="lg" onClick={() => navigate('/workout-session')}>
                   <Zap className="h-4 w-4 mr-2" />
                   Start Workout
                 </Button>
-                <Button variant="outline" size="lg">
+                <Button variant="outline" size="lg" onClick={() => navigate('/ai-workout')}>
                   <Calendar className="h-4 w-4 mr-2" />
-                  Schedule
+                  Generate AI Workout
                 </Button>
               </div>
             </CardContent>
@@ -186,7 +201,7 @@ export default function Dashboard() {
                   <Progress value={56} className="h-1 mt-1" />
                 </div>
               </div>
-              <Button variant="outline" className="w-full">
+              <Button variant="outline" className="w-full" onClick={() => navigate('/nutrition')}>
                 Log Meal
               </Button>
             </CardContent>

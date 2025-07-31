@@ -10,6 +10,8 @@ import ExercisesPage from "./pages/ExercisesPage";
 import OnboardingPage from "./pages/OnboardingPage";
 import SubscriptionPage from "./pages/SubscriptionPage";
 import WorkoutSessionPage from "./pages/WorkoutSessionPage";
+import PhoenixScorePage from "./pages/PhoenixScorePage";
+import WorkoutLogsPage from "./pages/WorkoutLogsPage";
 import RewardsPage from "./pages/RewardsPage";
 import AIWorkoutPage from "./pages/AIWorkoutPage";
 import NutritionPage from "./pages/NutritionPage";
@@ -31,9 +33,11 @@ const App = () => (
             <Route path="workouts" element={<WorkoutsPage />} />
             <Route path="exercises" element={<ExercisesPage />} />
             <Route path="workout-session" element={<WorkoutSessionPage />} />
+            <Route path="phoenix-score" element={<PhoenixScorePage />} />
+            <Route path="workout-logs" element={<WorkoutLogsPage />} />
             <Route path="ai-workout" element={<AIWorkoutPage />} />
             <Route path="nutrition" element={<NutritionPage />} />
-            <Route path="points" element={<RewardsPage />} />
+            <Route path="rewards" element={<RewardsPage />} />
             {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
             <Route path="*" element={<NotFound />} />
           </Route>
