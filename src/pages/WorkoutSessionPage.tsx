@@ -1,5 +1,5 @@
-import { WorkoutLogger } from "@/components/workout/WorkoutLogger";
+import WorkoutSession from "@/components/workout/WorkoutSession";
 
 export default function WorkoutSessionPage() {
-  return <WorkoutLogger />;
+  return <WorkoutSession />;
 }

@@ -24,8 +24,10 @@ import {
   Filter,
   TrendingUp
 } from "lucide-react";
+import { useNavigate } from "react-router-dom";
 
 export default function WorkoutsPage() {
+  const navigate = useNavigate();
   const [selectedDifficulty, setSelectedDifficulty] = useState<string>("all");
 
   // Mock data for demonstration
@@ -107,7 +109,7 @@ export default function WorkoutsPage() {
             <Filter className="h-4 w-4 mr-2" />
             Filter
           </Button>
-          <Button>
+          <Button onClick={() => navigate('/workout-creator')}>
             <Plus className="h-4 w-4 mr-2" />
             Create Workout
           </Button>
@@ -132,21 +134,33 @@ export default function WorkoutsPage() {
         </CardHeader>
         <CardContent>
           <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-            <Button variant="outline" className="h-auto flex-col items-start p-4">
+            <Button 
+              variant="outline" 
+              className="h-auto flex-col items-start p-4"
+              onClick={() => navigate('/workout-session')}
+            >
               <Target className="h-6 w-6 mb-2 text-primary" />
               <div className="text-left">
                 <div className="font-medium">Quick Start</div>
                 <div className="text-xs text-muted-foreground">30-min balanced workout</div>
               </div>
             </Button>
-            <Button variant="outline" className="h-auto flex-col items-start p-4">
+            <Button 
+              variant="outline" 
+              className="h-auto flex-col items-start p-4"
+              onClick={() => navigate('/ai-workout')}
+            >
               <Dumbbell className="h-6 w-6 mb-2 text-fitness-orange" />
               <div className="text-left">
                 <div className="font-medium">Strength Focus</div>
                 <div className="text-xs text-muted-foreground">Progressive overload</div>
               </div>
             </Button>
-            <Button variant="outline" className="h-auto flex-col items-start p-4">
+            <Button 
+              variant="outline" 
+              className="h-auto flex-col items-start p-4"
+              onClick={() => navigate('/ai-workout')}
+            >
               <TrendingUp className="h-6 w-6 mb-2 text-fitness-green-electric" />
               <div className="text-left">
                 <div className="font-medium">Adaptive</div>
@@ -213,7 +227,11 @@ export default function WorkoutsPage() {
                         <Calendar className="h-4 w-4 mr-2" />
                         Schedule
                       </Button>
-                      <Button size="sm" variant="hero">
+                      <Button 
+                        size="sm" 
+                        variant="hero"
+                        onClick={() => navigate('/workout-session')}
+                      >
                         <Play className="h-4 w-4 mr-2" />
                         Start
                       </Button>
@@ -258,10 +276,18 @@ export default function WorkoutsPage() {
                     </div>
                     
                     <div className="flex gap-2">
-                      <Button variant="outline" size="sm">
+                      <Button 
+                        variant="outline" 
+                        size="sm"
+                        onClick={() => navigate('/workout-logs')}
+                      >
                         View Details
                       </Button>
-                      <Button variant="outline" size="sm">
+                      <Button 
+                        variant="outline" 
+                        size="sm"
+                        onClick={() => navigate('/workout-session')}
+                      >
                         Repeat
                       </Button>
                     </div>

@@ -15,6 +15,7 @@ import WorkoutLogsPage from "./pages/WorkoutLogsPage";
 import RewardsPage from "./pages/RewardsPage";
 import AIWorkoutPage from "./pages/AIWorkoutPage";
 import NutritionPage from "./pages/NutritionPage";
+import WorkoutCreatorPage from "./pages/WorkoutCreatorPage";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
@@ -37,6 +38,7 @@ const App = () => (
             <Route path="workout-logs" element={<WorkoutLogsPage />} />
             <Route path="ai-workout" element={<AIWorkoutPage />} />
             <Route path="nutrition" element={<NutritionPage />} />
+            <Route path="workout-creator" element={<WorkoutCreatorPage />} />
             <Route path="rewards" element={<RewardsPage />} />
             {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
             <Route path="*" element={<NotFound />} />
