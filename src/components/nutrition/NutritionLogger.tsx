@@ -1,8 +1,11 @@
 /**
- * Comprehensive Nutrition Logging Component
+ * Enhanced Nutrition Logging Component
  * 
- * Allows users to search, log, and track their daily nutrition intake
- * with macro and micronutrient tracking capabilities.
+ * Features inspired by MyFitnessPal and Noom:
+ * - Color-coded food tracking system
+ * - Macro progress rings
+ * - Comprehensive food database
+ * - Daily summaries and goal tracking
  */
 
 import { useState, useEffect } from "react";
@@ -29,7 +32,10 @@ import {
   Clock,
   Utensils,
   AlertCircle,
-  CheckCircle
+  CheckCircle,
+  Trophy,
+  Flame,
+  Calendar
 } from "lucide-react";
 
 interface FoodItem {
@@ -41,8 +47,10 @@ interface FoodItem {
   carbs_per_100g: number;
   fat_per_100g: number;
   fiber_per_100g?: number;
-  serving_sizes: any; // Use any for JSON fields from Supabase
+  serving_sizes: any;
   traffic_light_category: 'green' | 'yellow' | 'red';
+  food_group?: string;
+  category?: string;
 }
 
 interface NutritionLog {
@@ -59,7 +67,7 @@ interface NutritionLog {
   fat_g: number;
   fiber_g?: number;
   notes?: string;
-  food?: FoodItem;
+  foods?: FoodItem;
 }
 
 interface NutritionGoals {
@@ -101,7 +109,6 @@ export function NutritionLogger() {
   const { toast } = useToast();
   const { user } = useAuth();
 
-  // Load daily summary and goals
   useEffect(() => {
     if (user) {
       loadDailySummary();
@@ -118,7 +125,7 @@ export function NutritionLogger() {
           foods (
             id, name, brand, calories_per_100g, protein_per_100g, 
             carbs_per_100g, fat_per_100g, fiber_per_100g,
-            traffic_light_category, serving_sizes
+            traffic_light_category, serving_sizes, food_group, category
           )
         `)
         .eq('user_id', user?.id)
@@ -127,7 +134,6 @@ export function NutritionLogger() {
 
       if (error) throw error;
 
-      // Group by meal type and calculate totals
       const mealGroups = {
         breakfast: [],
         lunch: [],
@@ -201,7 +207,6 @@ export function NutritionLogger() {
 
       if (error) throw error;
       
-      // Transform the data to ensure proper typing
       const transformedFoods = foods?.map(food => ({
         ...food,
         serving_sizes: Array.isArray(food.serving_sizes) ? food.serving_sizes : [],
@@ -220,7 +225,6 @@ export function NutritionLogger() {
   };
 
   const calculateNutrition = (food: FoodItem, amount: number, unit: string) => {
-    // Convert serving to grams
     let grams = amount;
     if (unit !== 'g' && Array.isArray(food.serving_sizes)) {
       const servingSize = food.serving_sizes.find((s: any) => s.unit === unit);
@@ -267,7 +271,6 @@ export function NutritionLogger() {
 
       if (error) throw error;
 
-      // Trigger event for SEP rewards
       await supabase
         .from('events')
         .insert({
@@ -285,7 +288,6 @@ export function NutritionLogger() {
         description: `${selectedFood.name} added to ${selectedMealType}`,
       });
 
-      // Reset form and reload data
       setSelectedFood(null);
       setServingAmount(1);
       setServingUnit('');
@@ -316,6 +318,46 @@ export function NutritionLogger() {
     return target > 0 ? Math.min((current / target) * 100, 100) : 0;
   };
 
+  const MacroRing = ({ current, target, color, label }: { current: number; target: number; color: string; label: string }) => {
+    const percentage = getMacroProgress(current, target);
+    return (
+      <div className="text-center">
+        <div className="relative w-20 h-20 mx-auto mb-2">
+          <svg className="w-20 h-20 transform -rotate-90" viewBox="0 0 36 36">
+            <path
+              d="M18 2.0845
+                a 15.9155 15.9155 0 0 1 0 31.831
+                a 15.9155 15.9155 0 0 1 0 -31.831"
+              fill="none"
+              stroke="currentColor"
+              strokeWidth="3"
+              className="text-muted/20"
+            />
+            <path
+              d="M18 2.0845
+                a 15.9155 15.9155 0 0 1 0 31.831
+                a 15.9155 15.9155 0 0 1 0 -31.831"
+              fill="none"
+              stroke="currentColor"
+              strokeWidth="3"
+              strokeDasharray={`${percentage}, 100`}
+              className={color}
+            />
+          </svg>
+          <div className="absolute inset-0 flex items-center justify-center">
+            <span className={`text-lg font-bold ${color.replace('text-', 'text-')}`}>
+              {Math.round(percentage)}%
+            </span>
+          </div>
+        </div>
+        <div className="text-sm font-medium">{label}</div>
+        <div className="text-xs text-muted-foreground">
+          {Math.round(current)} / {target}{label === 'Calories' ? '' : 'g'}
+        </div>
+      </div>
+    );
+  };
+
   return (
     <div className="container mx-auto px-4 py-8 max-w-6xl">
       <div className="text-center mb-8">
@@ -324,18 +366,159 @@ export function NutritionLogger() {
             <Apple className="h-8 w-8" />
           </div>
         </div>
-        <h1 className="text-4xl font-bold mb-4">Nutrition Logger</h1>
+        <h1 className="text-4xl font-bold mb-4">Nutrition Tracker</h1>
         <p className="text-xl text-muted-foreground">
-          Track your daily nutrition and reach your health goals
+          Smart food logging with color-coded guidance
         </p>
       </div>
 
-      <Tabs defaultValue="log" className="space-y-6">
+      <Tabs defaultValue="daily" className="space-y-6">
         <TabsList className="grid w-full grid-cols-3">
+          <TabsTrigger value="daily">Today's Progress</TabsTrigger>
           <TabsTrigger value="log">Log Food</TabsTrigger>
-          <TabsTrigger value="daily">Daily Summary</TabsTrigger>
-          <TabsTrigger value="goals">Nutrition Goals</TabsTrigger>
+          <TabsTrigger value="goals">Goals & Settings</TabsTrigger>
         </TabsList>
+
+        {/* Daily Progress Tab - Enhanced with Macro Rings */}
+        <TabsContent value="daily" className="space-y-6">
+          {/* Progress Hero Section */}
+          <Card className="bg-gradient-to-br from-primary/5 to-primary/10 border-primary/20">
+            <CardContent className="p-6">
+              <div className="flex items-center justify-between mb-6">
+                <div>
+                  <h2 className="text-2xl font-bold flex items-center gap-2">
+                    <Trophy className="h-6 w-6" />
+                    Today's Progress
+                  </h2>
+                  <p className="text-muted-foreground flex items-center gap-2 mt-1">
+                    <Calendar className="h-4 w-4" />
+                    {new Date(selectedDate).toLocaleDateString('en-US', { 
+                      weekday: 'long', 
+                      year: 'numeric', 
+                      month: 'long', 
+                      day: 'numeric' 
+                    })}
+                  </p>
+                </div>
+                <div className="text-right">
+                  <div className="text-3xl font-bold text-primary flex items-center gap-2">
+                    <Flame className="h-8 w-8" />
+                    {Object.values(dailySummary?.meals || {}).flat().length}
+                  </div>
+                  <div className="text-sm text-muted-foreground">meals logged</div>
+                </div>
+              </div>
+              
+              {/* Macro Progress Rings */}
+              {nutritionGoals && (
+                <div className="grid grid-cols-2 md:grid-cols-4 gap-6">
+                  <MacroRing 
+                    current={dailySummary?.calories || 0} 
+                    target={nutritionGoals.calories_target} 
+                    color="text-orange-500" 
+                    label="Calories" 
+                  />
+                  <MacroRing 
+                    current={dailySummary?.protein || 0} 
+                    target={nutritionGoals.protein_target_g} 
+                    color="text-blue-500" 
+                    label="Protein" 
+                  />
+                  <MacroRing 
+                    current={dailySummary?.carbs || 0} 
+                    target={nutritionGoals.carbs_target_g} 
+                    color="text-green-500" 
+                    label="Carbs" 
+                  />
+                  <MacroRing 
+                    current={dailySummary?.fat || 0} 
+                    target={nutritionGoals.fat_target_g} 
+                    color="text-purple-500" 
+                    label="Fat" 
+                  />
+                </div>
+              )}
+            </CardContent>
+          </Card>
+
+          {/* Food Color Guide */}
+          <Card>
+            <CardHeader>
+              <CardTitle className="flex items-center gap-2">
+                <Target className="h-5 w-5" />
+                Food Quality Guide
+              </CardTitle>
+              <CardDescription>
+                Color-coded system to help you make healthier choices
+              </CardDescription>
+            </CardHeader>
+            <CardContent>
+              <div className="grid md:grid-cols-3 gap-4">
+                <div className="text-center p-4 rounded-lg bg-green-50 border border-green-200">
+                  <div className="w-4 h-4 bg-green-500 rounded-full mx-auto mb-2"></div>
+                  <h3 className="font-semibold text-green-800">Green Foods</h3>
+                  <p className="text-sm text-green-600">Most of your calories should come from these nutrient-dense, lower-calorie foods</p>
+                </div>
+                <div className="text-center p-4 rounded-lg bg-yellow-50 border border-yellow-200">
+                  <div className="w-4 h-4 bg-yellow-500 rounded-full mx-auto mb-2"></div>
+                  <h3 className="font-semibold text-yellow-800">Yellow Foods</h3>
+                  <p className="text-sm text-yellow-600">Lean proteins, healthy fats, and complex carbs - enjoy in moderation</p>
+                </div>
+                <div className="text-center p-4 rounded-lg bg-red-50 border border-red-200">
+                  <div className="w-4 h-4 bg-red-500 rounded-full mx-auto mb-2"></div>
+                  <h3 className="font-semibold text-red-800">Red Foods</h3>
+                  <p className="text-sm text-red-600">Calorie-dense foods - limit these but don't eliminate them completely</p>
+                </div>
+              </div>
+            </CardContent>
+          </Card>
+
+          {/* Meals Breakdown */}
+          <div className="grid md:grid-cols-2 lg:grid-cols-4 gap-4">
+            {['breakfast', 'lunch', 'dinner', 'snack'].map((mealType) => (
+              <Card key={mealType} className="hover:shadow-lg transition-shadow">
+                <CardHeader className="pb-3">
+                  <CardTitle className="text-lg capitalize flex items-center gap-2">
+                    <Utensils className="h-4 w-4" />
+                    {mealType}
+                    <Badge variant="outline" className="ml-auto">
+                      {dailySummary?.meals?.[mealType as keyof typeof dailySummary.meals]?.length || 0}
+                    </Badge>
+                  </CardTitle>
+                </CardHeader>
+                <CardContent className="space-y-2">
+                  {dailySummary?.meals?.[mealType as keyof typeof dailySummary.meals]?.length ? (
+                    dailySummary.meals[mealType as keyof typeof dailySummary.meals].map((log: any, index: number) => (
+                      <div key={index} className="p-3 border rounded-lg hover:bg-muted/50 transition-colors">
+                        <div className="flex items-center gap-2 mb-1">
+                          <div className={`w-2 h-2 rounded-full ${
+                            log.foods?.traffic_light_category === 'green' ? 'bg-green-500' :
+                            log.foods?.traffic_light_category === 'yellow' ? 'bg-yellow-500' : 'bg-red-500'
+                          }`}></div>
+                          <div className="font-medium text-sm">
+                            {log.foods?.name || log.custom_food_name}
+                          </div>
+                        </div>
+                        <div className="text-xs text-muted-foreground">
+                          {log.serving_amount} {log.serving_unit} • {log.calories} cal
+                        </div>
+                        <div className="text-xs text-muted-foreground mt-1">
+                          P: {Math.round(log.protein_g || 0)}g • C: {Math.round(log.carbs_g || 0)}g • F: {Math.round(log.fat_g || 0)}g
+                        </div>
+                      </div>
+                    ))
+                  ) : (
+                    <div className="text-center text-muted-foreground text-sm py-8 border-2 border-dashed rounded-lg">
+                      <Utensils className="h-8 w-8 mx-auto mb-2 opacity-50" />
+                      <div>No foods logged yet</div>
+                      <div className="text-xs">Switch to "Log Food" tab to add items</div>
+                    </div>
+                  )}
+                </CardContent>
+              </Card>
+            ))}
+          </div>
+        </TabsContent>
 
         {/* Food Logging Tab */}
         <TabsContent value="log" className="space-y-6">
@@ -353,7 +536,7 @@ export function NutritionLogger() {
               </CardHeader>
               <CardContent className="space-y-4">
                 <div className="space-y-2">
-                  <Label htmlFor="search">Food Name or Barcode</Label>
+                  <Label htmlFor="search">Food Name or Brand</Label>
                   <Input
                     id="search"
                     placeholder="Search for foods..."
@@ -379,20 +562,24 @@ export function NutritionLogger() {
                         }}
                       >
                         <div className="flex items-center justify-between">
-                          <div>
-                            <h4 className="font-medium">{food.name}</h4>
-                            {food.brand && (
-                              <p className="text-sm text-muted-foreground">{food.brand}</p>
-                            )}
-                          </div>
                           <div className="flex items-center gap-2">
-                            <Badge 
-                              variant="outline" 
-                              className={getTrafficLightColor(food.traffic_light_category)}
-                            >
-                              {food.calories_per_100g} cal/100g
-                            </Badge>
+                            <div className={`w-3 h-3 rounded-full ${
+                              food.traffic_light_category === 'green' ? 'bg-green-500' :
+                              food.traffic_light_category === 'yellow' ? 'bg-yellow-500' : 'bg-red-500'
+                            }`}></div>
+                            <div>
+                              <h4 className="font-medium">{food.name}</h4>
+                              {food.brand && (
+                                <p className="text-sm text-muted-foreground">{food.brand}</p>
+                              )}
+                            </div>
                           </div>
+                          <Badge 
+                            variant="outline" 
+                            className={getTrafficLightColor(food.traffic_light_category)}
+                          >
+                            {food.calories_per_100g} cal/100g
+                          </Badge>
                         </div>
                       </div>
                     ))}
@@ -414,7 +601,6 @@ export function NutritionLogger() {
                   </CardDescription>
                 </CardHeader>
                 <CardContent className="space-y-4">
-                  {/* Meal Type Selection */}
                   <div className="space-y-2">
                     <Label>Meal Type</Label>
                     <Select value={selectedMealType} onValueChange={setSelectedMealType}>
@@ -430,7 +616,6 @@ export function NutritionLogger() {
                     </Select>
                   </div>
 
-                  {/* Serving Size */}
                   <div className="grid grid-cols-2 gap-2">
                     <div className="space-y-2">
                       <Label>Amount</Label>
@@ -460,7 +645,6 @@ export function NutritionLogger() {
                     </div>
                   </div>
 
-                  {/* Nutrition Preview */}
                   {servingAmount > 0 && servingUnit && (
                     <div className="p-3 bg-muted rounded-lg">
                       <h4 className="font-medium mb-2">Nutrition Information</h4>
@@ -480,7 +664,6 @@ export function NutritionLogger() {
                     </div>
                   )}
 
-                  {/* Notes */}
                   <div className="space-y-2">
                     <Label htmlFor="notes">Notes (Optional)</Label>
                     <Textarea
@@ -498,7 +681,7 @@ export function NutritionLogger() {
                   >
                     {isLogging ? (
                       <>
-                        <Clock className="h-4 w-4 mr-2 animate-spin" />
+                        <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white mr-2"></div>
                         Logging...
                       </>
                     ) : (
@@ -514,124 +697,8 @@ export function NutritionLogger() {
           </div>
         </TabsContent>
 
-        {/* Daily Summary Tab */}
-        <TabsContent value="daily" className="space-y-6">
-          {/* Date Selection */}
-          <Card>
-            <CardContent className="py-4">
-              <div className="flex items-center gap-4">
-                <Label htmlFor="date">Date:</Label>
-                <Input
-                  id="date"
-                  type="date"
-                  value={selectedDate}
-                  onChange={(e) => setSelectedDate(e.target.value)}
-                  className="w-auto"
-                />
-              </div>
-            </CardContent>
-          </Card>
-
-          {/* Macro Overview */}
-          {dailySummary && nutritionGoals && (
-            <Card>
-              <CardHeader>
-                <CardTitle className="flex items-center gap-2">
-                  <Target className="h-5 w-5" />
-                  Daily Progress
-                </CardTitle>
-              </CardHeader>
-              <CardContent>
-                <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
-                  {/* Calories */}
-                  <div className="space-y-2">
-                    <div className="flex justify-between text-sm">
-                      <span>Calories</span>
-                      <span>{Math.round(dailySummary.calories)} / {nutritionGoals.calories_target}</span>
-                    </div>
-                    <Progress value={getMacroProgress(dailySummary.calories, nutritionGoals.calories_target)} />
-                  </div>
-
-                  {/* Protein */}
-                  <div className="space-y-2">
-                    <div className="flex justify-between text-sm">
-                      <span>Protein</span>
-                      <span>{Math.round(dailySummary.protein)}g / {nutritionGoals.protein_target_g}g</span>
-                    </div>
-                    <Progress value={getMacroProgress(dailySummary.protein, nutritionGoals.protein_target_g)} />
-                  </div>
-
-                  {/* Carbs */}
-                  <div className="space-y-2">
-                    <div className="flex justify-between text-sm">
-                      <span>Carbs</span>
-                      <span>{Math.round(dailySummary.carbs)}g / {nutritionGoals.carbs_target_g}g</span>
-                    </div>
-                    <Progress value={getMacroProgress(dailySummary.carbs, nutritionGoals.carbs_target_g)} />
-                  </div>
-
-                  {/* Fat */}
-                  <div className="space-y-2">
-                    <div className="flex justify-between text-sm">
-                      <span>Fat</span>
-                      <span>{Math.round(dailySummary.fat)}g / {nutritionGoals.fat_target_g}g</span>
-                    </div>
-                    <Progress value={getMacroProgress(dailySummary.fat, nutritionGoals.fat_target_g)} />
-                  </div>
-                </div>
-              </CardContent>
-            </Card>
-          )}
-
-          {/* Meal Breakdown */}
-          {dailySummary && (
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-              {Object.entries(dailySummary.meals).map(([mealType, logs]) => (
-                <Card key={mealType}>
-                  <CardHeader>
-                    <CardTitle className="flex items-center gap-2 capitalize">
-                      <Utensils className="h-5 w-5" />
-                      {mealType}
-                    </CardTitle>
-                  </CardHeader>
-                  <CardContent>
-                    {logs.length > 0 ? (
-                      <div className="space-y-2">
-                        {logs.map((log: any) => (
-                          <div key={log.id} className="p-2 border rounded">
-                            <div className="flex justify-between items-start">
-                              <div>
-                                <h4 className="font-medium">
-                                  {log.custom_food_name || log.foods?.name || 'Unknown Food'}
-                                </h4>
-                                <p className="text-sm text-muted-foreground">
-                                  {log.serving_amount} {log.serving_unit}
-                                </p>
-                              </div>
-                              <div className="text-right">
-                                <div className="text-sm font-medium">{Math.round(log.calories)} cal</div>
-                                <div className="text-xs text-muted-foreground">
-                                  P: {Math.round(log.protein_g)}g | C: {Math.round(log.carbs_g)}g | F: {Math.round(log.fat_g)}g
-                                </div>
-                              </div>
-                            </div>
-                          </div>
-                        ))}
-                      </div>
-                    ) : (
-                      <p className="text-muted-foreground text-center py-4">
-                        No foods logged for {mealType}
-                      </p>
-                    )}
-                  </CardContent>
-                </Card>
-              ))}
-            </div>
-          )}
-        </TabsContent>
-
-        {/* Nutrition Goals Tab */}
-        <TabsContent value="goals">
+        {/* Goals Tab */}
+        <TabsContent value="goals" className="space-y-6">
           <Card>
             <CardHeader>
               <CardTitle className="flex items-center gap-2">
@@ -639,14 +706,57 @@ export function NutritionLogger() {
                 Nutrition Goals
               </CardTitle>
               <CardDescription>
-                Set your daily nutrition targets
+                Set your daily macro and calorie targets
               </CardDescription>
             </CardHeader>
             <CardContent>
-              <p className="text-muted-foreground">
-                Nutrition goals management will be implemented in the next phase.
-                For now, default goals are set based on general recommendations.
-              </p>
+              {nutritionGoals ? (
+                <div className="grid md:grid-cols-2 gap-6">
+                  <div className="space-y-4">
+                    <h3 className="font-semibold">Current Goals</h3>
+                    <div className="space-y-2">
+                      <div className="flex justify-between">
+                        <span>Daily Calories:</span>
+                        <span className="font-medium">{nutritionGoals.calories_target}</span>
+                      </div>
+                      <div className="flex justify-between">
+                        <span>Protein:</span>
+                        <span className="font-medium">{nutritionGoals.protein_target_g}g</span>
+                      </div>
+                      <div className="flex justify-between">
+                        <span>Carbohydrates:</span>
+                        <span className="font-medium">{nutritionGoals.carbs_target_g}g</span>
+                      </div>
+                      <div className="flex justify-between">
+                        <span>Fat:</span>
+                        <span className="font-medium">{nutritionGoals.fat_target_g}g</span>
+                      </div>
+                      <div className="flex justify-between">
+                        <span>Fiber:</span>
+                        <span className="font-medium">{nutritionGoals.fiber_target_g}g</span>
+                      </div>
+                    </div>
+                  </div>
+                  <div className="space-y-4">
+                    <h3 className="font-semibold">Recommendations</h3>
+                    <div className="text-sm text-muted-foreground space-y-1">
+                      <p>• Aim for 0.8-1g protein per kg body weight</p>
+                      <p>• Include 25-35g fiber daily for digestive health</p>
+                      <p>• Focus on whole, minimally processed foods</p>
+                      <p>• Stay hydrated with 8-10 glasses of water daily</p>
+                    </div>
+                  </div>
+                </div>
+              ) : (
+                <div className="text-center py-8">
+                  <AlertCircle className="h-12 w-12 mx-auto mb-4 text-muted-foreground" />
+                  <h3 className="font-semibold mb-2">No Goals Set</h3>
+                  <p className="text-muted-foreground mb-4">
+                    Set up your nutrition goals to start tracking your progress
+                  </p>
+                  <Button>Set Up Goals</Button>
+                </div>
+              )}
             </CardContent>
           </Card>
         </TabsContent>
