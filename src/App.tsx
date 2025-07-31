@@ -17,6 +17,17 @@ import AIWorkoutPage from "./pages/AIWorkoutPage";
 import NutritionPage from "./pages/NutritionPage";
 import WorkoutCreatorPage from "./pages/WorkoutCreatorPage";
 import PeriodizationPage from "./pages/PeriodizationPage";
+import AnalyticsPage from "./pages/AnalyticsPage";
+import BiometricsPage from "./pages/BiometricsPage";
+import CommunityPage from "./pages/CommunityPage";
+import ChallengesPage from "./pages/ChallengesPage";
+import LeaderboardsPage from "./pages/LeaderboardsPage";
+import AchievementsPage from "./pages/AchievementsPage";
+import ProgramsPage from "./pages/ProgramsPage";
+import MarketplacePage from "./pages/MarketplacePage";
+import SettingsPage from "./pages/SettingsPage";
+import ActivityPage from "./pages/ActivityPage";
+import ProgressPage from "./pages/ProgressPage";
 import { AuthProvider } from "./hooks/useAuth";
 import NotFound from "./pages/NotFound";
 
@@ -32,15 +43,27 @@ const App = () => (
         <Routes>
           <Route path="/" element={<Layout />}>
             <Route index element={<Dashboard />} />
+            <Route path="analytics" element={<AnalyticsPage />} />
             <Route path="onboarding" element={<OnboardingPage />} />
             <Route path="subscription" element={<SubscriptionPage />} />
             <Route path="workouts" element={<WorkoutsPage />} />
             <Route path="exercises" element={<ExercisesPage />} />
+            <Route path="ai-workouts" element={<AIWorkoutPage />} />
+            <Route path="programs" element={<ProgramsPage />} />
             <Route path="workout-session" element={<WorkoutSessionPage />} />
             <Route path="phoenix-score" element={<PhoenixScorePage />} />
             <Route path="workout-logs" element={<WorkoutLogsPage />} />
             <Route path="ai-workout" element={<AIWorkoutPage />} />
             <Route path="nutrition" element={<NutritionPage />} />
+            <Route path="biometrics" element={<BiometricsPage />} />
+            <Route path="progress" element={<ProgressPage />} />
+            <Route path="community" element={<CommunityPage />} />
+            <Route path="challenges" element={<ChallengesPage />} />
+            <Route path="leaderboards" element={<LeaderboardsPage />} />
+            <Route path="achievements" element={<AchievementsPage />} />
+            <Route path="marketplace" element={<MarketplacePage />} />
+            <Route path="settings" element={<SettingsPage />} />
+            <Route path="activity" element={<ActivityPage />} />
             <Route path="workout-creator" element={<WorkoutCreatorPage />} />
             <Route path="periodization" element={<PeriodizationPage />} />
             <Route path="rewards" element={<RewardsPage />} />
