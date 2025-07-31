@@ -14,6 +14,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { WorkoutTemplates } from "@/components/workout/WorkoutTemplates";
 import {
   Search,
   Play,
@@ -23,7 +24,9 @@ import {
   Heart,
   Zap,
   Filter,
-  Star
+  Star,
+  Trophy,
+  TrendingUp
 } from "lucide-react";
 
 export default function ExercisesPage() {
@@ -116,20 +119,27 @@ export default function ExercisesPage() {
   };
 
   return (
-    <div className="space-y-6">
-      {/* Header */}
-      <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
-        <div>
-          <h1 className="text-3xl font-bold tracking-tight">Exercise Library</h1>
-          <p className="text-muted-foreground">
-            Discover over 500 exercises with detailed instructions and video demonstrations
-          </p>
-        </div>
-        <Button variant="outline">
-          <Filter className="h-4 w-4 mr-2" />
-          Advanced Filters
-        </Button>
+    <div className="container mx-auto px-4 py-8 max-w-7xl">
+      <div className="text-center mb-8">
+        <h1 className="text-4xl font-bold mb-4 flex items-center justify-center gap-2">
+          <Trophy className="h-8 w-8 text-primary" />
+          Exercise Library & Programs
+        </h1>
+        <p className="text-xl text-muted-foreground">
+          Explore our comprehensive exercise database and proven workout templates
+        </p>
       </div>
+
+      <Tabs defaultValue="templates" className="space-y-6">
+        <TabsList className="grid w-full grid-cols-3">
+          <TabsTrigger value="templates">Workout Programs</TabsTrigger>
+          <TabsTrigger value="browse">Exercise Library</TabsTrigger>
+          <TabsTrigger value="categories">Categories</TabsTrigger>
+        </TabsList>
+
+        <TabsContent value="templates">
+          <WorkoutTemplates />
+        </TabsContent>
 
       {/* Search Bar */}
       <Card>
@@ -165,23 +175,29 @@ export default function ExercisesPage() {
         ))}
       </div>
 
-      {/* Exercise Content */}
-      <Tabs defaultValue="browse" className="space-y-4">
-        <TabsList className="grid w-full grid-cols-4">
-          <TabsTrigger value="browse">Browse All</TabsTrigger>
-          <TabsTrigger value="favorites">Favorites</TabsTrigger>
-          <TabsTrigger value="recent">Recently Used</TabsTrigger>
-          <TabsTrigger value="custom">My Exercises</TabsTrigger>
-        </TabsList>
+        <TabsContent value="browse" className="space-y-6">
+          {/* Search Bar */}
+          <Card>
+            <CardContent className="p-6">
+              <div className="relative">
+                <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+                <Input
+                  placeholder="Search exercises, muscle groups, or equipment..."
+                  className="pl-10"
+                  value={searchTerm}
+                  onChange={(e) => setSearchTerm(e.target.value)}
+                />
+              </div>
+            </CardContent>
+          </Card>
 
-        {/* Browse All Exercises */}
-        <TabsContent value="browse" className="space-y-4">
+          {/* Exercise Grid */}
           <div className="grid gap-4 md:grid-cols-2">
             {filteredExercises.map((exercise) => (
               <Card key={exercise.id} className="hover:shadow-md transition-shadow">
                 <CardContent className="p-0">
                   {/* Exercise Video/Thumbnail */}
-                  <div className="relative aspect-video bg-gradient-to-br from-primary/10 to-fitness-orange/10 rounded-t-lg overflow-hidden">
+                  <div className="relative aspect-video bg-gradient-to-br from-primary/10 to-orange-500/10 rounded-t-lg overflow-hidden">
                     <div className="absolute inset-0 flex items-center justify-center">
                       <Button variant="secondary" size="lg" className="bg-white/90 hover:bg-white">
                         <Play className="h-6 w-6 mr-2" />
@@ -189,7 +205,7 @@ export default function ExercisesPage() {
                       </Button>
                     </div>
                     {exercise.isBodyweight && (
-                      <Badge className="absolute top-2 left-2 bg-fitness-green-electric">
+                      <Badge className="absolute top-2 left-2 bg-green-500">
                         Bodyweight
                       </Badge>
                     )}
@@ -251,44 +267,30 @@ export default function ExercisesPage() {
           )}
         </TabsContent>
 
-        {/* Favorites */}
-        <TabsContent value="favorites" className="space-y-4">
-          <div className="text-center py-12">
-            <Star className="h-12 w-12 text-muted-foreground mx-auto mb-4" />
-            <h3 className="text-lg font-semibold mb-2">No Favorites Yet</h3>
-            <p className="text-muted-foreground mb-4">
-              Start marking exercises as favorites to see them here
-            </p>
-            <Button variant="outline">Browse Exercises</Button>
+        <TabsContent value="categories" className="space-y-6">
+          {/* Exercise Categories */}
+          <div className="grid grid-cols-2 md:grid-cols-4 gap-6">
+            {exerciseCategories.map((category) => (
+              <Card 
+                key={category.name} 
+                className="hover:shadow-lg transition-all duration-200 cursor-pointer hover:scale-105"
+                onClick={() => setSearchTerm(category.name.toLowerCase())}
+              >
+                <CardContent className="p-6 text-center">
+                  <div className={`h-16 w-16 rounded-full ${category.color} flex items-center justify-center mx-auto mb-4`}>
+                    <category.icon className="h-8 w-8 text-white" />
+                  </div>
+                  <h3 className="font-semibold text-lg mb-2">{category.name}</h3>
+                  <p className="text-sm text-muted-foreground">{category.count} exercises</p>
+                  <Button variant="outline" size="sm" className="mt-3 w-full">
+                    Explore Category
+                  </Button>
+                </CardContent>
+              </Card>
+            ))}
           </div>
         </TabsContent>
 
-        {/* Recently Used */}
-        <TabsContent value="recent" className="space-y-4">
-          <div className="text-center py-12">
-            <BookOpen className="h-12 w-12 text-muted-foreground mx-auto mb-4" />
-            <h3 className="text-lg font-semibold mb-2">No Recent Exercises</h3>
-            <p className="text-muted-foreground mb-4">
-              Exercises you use in workouts will appear here
-            </p>
-            <Button variant="outline">Start a Workout</Button>
-          </div>
-        </TabsContent>
-
-        {/* Custom Exercises */}
-        <TabsContent value="custom" className="space-y-4">
-          <div className="text-center py-12">
-            <Dumbbell className="h-12 w-12 text-muted-foreground mx-auto mb-4" />
-            <h3 className="text-lg font-semibold mb-2">Create Your Own Exercises</h3>
-            <p className="text-muted-foreground mb-4">
-              Add custom exercises that aren't in our library
-            </p>
-            <Button>
-              <BookOpen className="h-4 w-4 mr-2" />
-              Create Exercise
-            </Button>
-          </div>
-        </TabsContent>
       </Tabs>
     </div>
   );
