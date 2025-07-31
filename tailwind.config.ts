@@ -57,6 +57,9 @@ export default {
 					orange: 'hsl(var(--fitness-orange))',
 					'orange-glow': 'hsl(var(--fitness-orange-glow))',
 					green: 'hsl(var(--fitness-green))',
+					'green-bright': 'hsl(var(--fitness-green-bright))',
+					'green-electric': 'hsl(var(--fitness-green-electric))',
+					'green-neon': 'hsl(var(--fitness-green-neon))',
 					purple: 'hsl(var(--fitness-purple))'
 				},
 				sidebar: {

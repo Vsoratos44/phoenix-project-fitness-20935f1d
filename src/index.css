@@ -41,11 +41,16 @@ All colors MUST be HSL.
     --fitness-orange: 25 95% 53%;
     --fitness-orange-glow: 25 95% 63%;
     --fitness-green: 142 76% 36%;
+    --fitness-green-bright: 134 61% 51%;
+    --fitness-green-electric: 120 100% 50%;
+    --fitness-green-neon: 127 100% 82%;
     --fitness-purple: 271 81% 56%;
     
     /* Gradients */
     --gradient-primary: linear-gradient(135deg, hsl(var(--primary)), hsl(var(--primary-glow)));
     --gradient-hero: linear-gradient(135deg, hsl(var(--primary)) 0%, hsl(var(--fitness-orange)) 100%);
+    --gradient-success: linear-gradient(135deg, hsl(var(--fitness-green-bright)) 0%, hsl(var(--fitness-green-electric)) 100%);
+    --gradient-neon: linear-gradient(135deg, hsl(var(--fitness-green-electric)) 0%, hsl(var(--fitness-green-neon)) 100%);
     --gradient-card: linear-gradient(145deg, hsl(var(--card)) 0%, hsl(240 10% 6%) 100%);
     
     /* Shadows */

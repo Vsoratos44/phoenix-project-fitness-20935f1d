@@ -20,6 +20,8 @@ const buttonVariants = cva(
         link: "text-primary underline-offset-4 hover:underline",
         hero: "bg-gradient-to-r from-primary to-fitness-orange text-primary-foreground hover:shadow-lg hover:scale-105 transition-all duration-300 font-semibold",
         fitness: "bg-fitness-orange text-primary-foreground hover:bg-fitness-orange-glow hover:shadow-lg transition-all duration-300",
+        success: "bg-gradient-to-r from-fitness-green-bright to-fitness-green-electric text-primary-foreground hover:shadow-lg hover:scale-105 transition-all duration-300 font-semibold",
+        electric: "bg-fitness-green-electric text-primary-foreground hover:bg-fitness-green-neon hover:shadow-lg transition-all duration-300",
         glow: "bg-primary text-primary-foreground hover:bg-primary-glow animate-pulse-glow",
       },
       size: {

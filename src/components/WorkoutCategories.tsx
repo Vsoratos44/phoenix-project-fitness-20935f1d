@@ -21,7 +21,7 @@ const categories = [
     icon: Waves,
     title: "Yoga & Mindfulness",
     description: "Find balance and flexibility with calming yoga and meditation practices",
-    color: "fitness-green",
+    color: "fitness-green-bright",
     workouts: "60+ Sessions"
   },
   {

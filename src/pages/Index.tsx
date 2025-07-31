@@ -1,6 +1,7 @@
 import Hero from "@/components/Hero";
 import WorkoutCategories from "@/components/WorkoutCategories";
 import StatsSection from "@/components/StatsSection";
+import CallToAction from "@/components/CallToAction";
 
 const Index = () => {
   return (
@@ -8,6 +9,7 @@ const Index = () => {
       <Hero />
       <WorkoutCategories />
       <StatsSection />
+      <CallToAction />
     </div>
   );
 };

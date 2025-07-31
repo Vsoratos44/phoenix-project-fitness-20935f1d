@@ -42,8 +42,8 @@ const StatsSection = () => {
                   <div className="text-sm text-muted-foreground">Calories Burned</div>
                   <Progress value={94} className="mt-3" />
                 </div>
-                <div className="text-center p-6 bg-fitness-green/10 rounded-2xl border border-fitness-green/20">
-                  <div className="text-3xl font-bold text-fitness-green mb-2">8h 32m</div>
+                <div className="text-center p-6 bg-fitness-green-bright/10 rounded-2xl border border-fitness-green-bright/20">
+                  <div className="text-3xl font-bold text-fitness-green-bright mb-2">8h 32m</div>
                   <div className="text-sm text-muted-foreground">Active Time</div>
                   <Progress value={76} className="mt-3" />
                 </div>
