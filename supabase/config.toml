@@ -24,3 +24,9 @@ verify_jwt = true
 
 [functions.customer-portal]
 verify_jwt = true
+
+[functions.ai-workout-generator]
+verify_jwt = true
+
+[functions.event-processor]
+verify_jwt = false

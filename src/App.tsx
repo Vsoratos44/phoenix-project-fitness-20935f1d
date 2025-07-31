@@ -11,6 +11,8 @@ import OnboardingPage from "./pages/OnboardingPage";
 import SubscriptionPage from "./pages/SubscriptionPage";
 import WorkoutSessionPage from "./pages/WorkoutSessionPage";
 import RewardsPage from "./pages/RewardsPage";
+import AIWorkoutPage from "./pages/AIWorkoutPage";
+import NutritionPage from "./pages/NutritionPage";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
@@ -29,6 +31,8 @@ const App = () => (
             <Route path="workouts" element={<WorkoutsPage />} />
             <Route path="exercises" element={<ExercisesPage />} />
             <Route path="workout-session" element={<WorkoutSessionPage />} />
+            <Route path="ai-workout" element={<AIWorkoutPage />} />
+            <Route path="nutrition" element={<NutritionPage />} />
             <Route path="points" element={<RewardsPage />} />
             {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
             <Route path="*" element={<NotFound />} />
