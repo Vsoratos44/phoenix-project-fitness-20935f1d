@@ -157,7 +157,7 @@ export function AIWorkoutGenerator() {
           goal: profile.primary_goal || 'build_muscle',
           fitnessLevel: profile.fitness_level || 'intermediate',
           duration: profile.preferred_workout_duration || 45,
-          equipment: Array.isArray(profile.available_equipment) ? profile.available_equipment : []
+          equipment: Array.isArray(profile.available_equipment) ? profile.available_equipment.map(item => String(item)) : []
         }));
       }
 
