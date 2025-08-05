@@ -1,0 +1,816 @@
+import "https://deno.land/x/xhr@0.1.0/mod.ts";
+import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
+import { createClient } from 'https://esm.sh/@supabase/supabase-js@2';
+
+const corsHeaders = {
+  'Access-Control-Allow-Origin': '*',
+  'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
+};
+
+// Initialize Supabase client
+const supabaseUrl = Deno.env.get('SUPABASE_URL')!;
+const supabaseServiceKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!;
+const openAIApiKey = Deno.env.get('OPENAI_API_KEY');
+
+const supabase = createClient(supabaseUrl, supabaseServiceKey);
+
+interface UserProfile {
+  user_id: string;
+  primary_goal: string;
+  fitness_level: string;
+  available_equipment: string[];
+  injury_history_summary: any[];
+  one_rep_max_estimates: any;
+  height_cm?: number;
+  weight_kg?: number;
+  preferred_workout_duration: number;
+  training_frequency_goal: number;
+  phoenix_score?: number;
+}
+
+interface Exercise {
+  id: string;
+  name: string;
+  description?: string;
+  exercise_type: string;
+  exercise_type_detailed: string;
+  intensity_level: string;
+  muscle_group_primary: string;
+  muscle_group_secondary?: string[];
+  equipment_required: string[];
+  injury_contraindications?: string[];
+  difficulty_level: string;
+  instructions?: string[];
+  progression_data?: any;
+}
+
+interface WorkoutBlock {
+  name: string;
+  order: number;
+  exercises: ExerciseWithParams[];
+  rounds?: number;
+  rest_between_rounds_seconds?: number;
+}
+
+interface ExerciseWithParams extends Exercise {
+  sets?: number;
+  reps?: number;
+  reps_min?: number;
+  reps_max?: number;
+  weight_kg?: number;
+  duration_seconds?: number;
+  rest_seconds?: number;
+  superset_group?: number;
+  rpe_target?: number;
+  tempo?: string;
+}
+
+interface GeneratedWorkout {
+  id: string;
+  name: string;
+  description: string;
+  archetype_id: string;
+  blocks: WorkoutBlock[];
+  coachNotes: string;
+  estimated_duration_minutes: number;
+  difficulty_rating: number;
+  metabolic_score: number;
+  strength_score: number;
+}
+
+/**
+ * Phoenix Dynamic Workout Engine
+ * The core algorithm that generates personalized, adaptive workouts
+ */
+class PhoenixWorkoutEngine {
+  constructor(private supabase: any) {}
+
+  /**
+   * Main entry point for workout generation
+   */
+  async generateWorkout(userProfile: UserProfile): Promise<GeneratedWorkout> {
+    console.log('🔥 Phoenix Workout Engine: Starting generation for user', userProfile.user_id);
+
+    // Step 1: Select optimal workout archetype
+    const archetype = await this.selectWorkoutArchetype(userProfile);
+    console.log('📋 Selected archetype:', archetype.name);
+
+    // Step 2: Get filtered exercise pool
+    const availableExercises = await this.getFilteredExercises(userProfile);
+    console.log('💪 Available exercises:', availableExercises.length);
+
+    // Step 3: Build workout blocks based on archetype
+    const workoutBlocks = await this.buildWorkoutBlocks(archetype, availableExercises, userProfile);
+
+    // Step 4: Calculate workout metrics
+    const metrics = this.calculateWorkoutMetrics(workoutBlocks, archetype);
+
+    // Step 5: Generate empathetic coach notes
+    const coachNotes = await this.generateCoachNotes(archetype, userProfile, workoutBlocks);
+
+    const workout: GeneratedWorkout = {
+      id: `phoenix_workout_${Date.now()}`,
+      name: archetype.name,
+      description: archetype.description,
+      archetype_id: archetype.id,
+      blocks: workoutBlocks,
+      coachNotes,
+      ...metrics
+    };
+
+    // Step 6: Log generation for analytics and learning
+    await this.logWorkoutGeneration(userProfile, archetype, workout);
+
+    console.log('✅ Phoenix Workout Engine: Generation complete');
+    return workout;
+  }
+
+  /**
+   * Selects the optimal workout archetype based on user profile and Phoenix Score
+   */
+  private async selectWorkoutArchetype(userProfile: UserProfile): Promise<any> {
+    const phoenixScore = userProfile.phoenix_score || 75; // Default if not available
+    
+    const { data: archetypes, error } = await this.supabase
+      .from('workout_archetypes')
+      .select('*')
+      .contains('primary_goals', [userProfile.primary_goal])
+      .contains('fitness_level_range', [userProfile.fitness_level]);
+
+    if (error || !archetypes?.length) {
+      console.warn('⚠️ No matching archetypes found, using default');
+      return {
+        id: 'default',
+        name: 'Full Body Fitness',
+        description: 'A well-rounded workout to improve all aspects of fitness',
+        structure_template: { blocks: ['warmup', 'strength', 'cardio', 'cooldown'] },
+        metabolic_emphasis: 0.5,
+        strength_emphasis: 0.5
+      };
+    }
+
+    // Filter by Phoenix Score range and select best match
+    const suitableArchetypes = archetypes.filter(archetype => {
+      const range = archetype.phoenix_score_range;
+      return phoenixScore >= range.min && phoenixScore <= range.max;
+    });
+
+    if (suitableArchetypes.length === 0) {
+      // Fallback to any archetype if Phoenix Score doesn't match
+      return archetypes[0];
+    }
+
+    // For recovery days (low Phoenix Score), prioritize recovery archetypes
+    if (phoenixScore < 50) {
+      const recoveryArchetype = suitableArchetypes.find(a => a.name.includes('Recovery') || a.name.includes('Mobility'));
+      if (recoveryArchetype) return recoveryArchetype;
+    }
+
+    return suitableArchetypes[0];
+  }
+
+  /**
+   * Gets exercises filtered by equipment and injury contraindications
+   */
+  private async getFilteredExercises(userProfile: UserProfile): Promise<Exercise[]> {
+    const { data: exercises, error } = await this.supabase
+      .from('exercises')
+      .select('*')
+      .eq('is_approved', true);
+
+    if (error || !exercises) {
+      console.error('❌ Error fetching exercises:', error);
+      return [];
+    }
+
+    // Filter by available equipment
+    const equipmentFiltered = exercises.filter(exercise => {
+      const required = exercise.equipment_required || [];
+      return required.length === 0 || required.some(eq => userProfile.available_equipment.includes(eq));
+    });
+
+    // Filter out contraindicated exercises based on injury history
+    const injuryFiltered = equipmentFiltered.filter(exercise => {
+      const contraindications = exercise.injury_contraindications || [];
+      const userInjuries = userProfile.injury_history_summary.map((injury: any) => injury.type);
+      
+      return !contraindications.some(contra => userInjuries.includes(contra));
+    });
+
+    return injuryFiltered;
+  }
+
+  /**
+   * Builds workout blocks based on archetype structure
+   */
+  private async buildWorkoutBlocks(archetype: any, exercises: Exercise[], userProfile: UserProfile): Promise<WorkoutBlock[]> {
+    const blocks: WorkoutBlock[] = [];
+    const structure = archetype.structure_template?.blocks || ['warmup', 'strength', 'cardio', 'cooldown'];
+
+    for (let i = 0; i < structure.length; i++) {
+      const blockType = structure[i];
+      let block: WorkoutBlock;
+
+      switch (blockType) {
+        case 'warmup':
+        case 'gentle_warmup':
+          block = this.buildWarmupBlock(exercises, userProfile, i + 1);
+          break;
+        case 'strength':
+        case 'strength_superset':
+        case 'compound_strength':
+          block = this.buildStrengthBlock(exercises, userProfile, i + 1, archetype);
+          break;
+        case 'cardio':
+        case 'metabolic_circuit':
+        case 'hiit_intervals':
+        case 'cardio_intervals':
+          block = this.buildMetabolicBlock(exercises, userProfile, i + 1, archetype);
+          break;
+        case 'cooldown':
+        case 'deep_stretch':
+          block = this.buildCooldownBlock(exercises, userProfile, i + 1);
+          break;
+        case 'mobility_flow':
+          block = this.buildMobilityBlock(exercises, userProfile, i + 1);
+          break;
+        case 'accessory_work':
+          block = this.buildAccessoryBlock(exercises, userProfile, i + 1);
+          break;
+        default:
+          block = this.buildStrengthBlock(exercises, userProfile, i + 1, archetype);
+      }
+
+      blocks.push(block);
+    }
+
+    return blocks;
+  }
+
+  /**
+   * Builds a dynamic warm-up block
+   */
+  private buildWarmupBlock(exercises: Exercise[], userProfile: UserProfile, order: number): WorkoutBlock {
+    const cardioWarmup = exercises.filter(ex => 
+      ex.exercise_type === 'cardio' && ex.intensity_level === 'low'
+    );
+    
+    const dynamicStretches = exercises.filter(ex => 
+      ex.exercise_type === 'stretching' && ex.description?.includes('dynamic')
+    );
+
+    const selectedExercises: ExerciseWithParams[] = [];
+
+    // Add light cardio (5 minutes)
+    if (cardioWarmup.length > 0) {
+      selectedExercises.push({
+        ...cardioWarmup[0],
+        duration_seconds: 300,
+        sets: 1
+      });
+    }
+
+    // Add 2-3 dynamic movements
+    const shuffledStretches = dynamicStretches.sort(() => 0.5 - Math.random());
+    for (let i = 0; i < Math.min(3, shuffledStretches.length); i++) {
+      selectedExercises.push({
+        ...shuffledStretches[i],
+        reps: 10,
+        sets: 1,
+        rest_seconds: 15
+      });
+    }
+
+    return {
+      name: 'Dynamic Warm-up',
+      order,
+      exercises: selectedExercises
+    };
+  }
+
+  /**
+   * Builds a strength training block with progressive overload
+   */
+  private buildStrengthBlock(exercises: Exercise[], userProfile: UserProfile, order: number, archetype: any): WorkoutBlock {
+    const strengthExercises = exercises.filter(ex => ex.exercise_type === 'strength');
+    
+    // Prioritize compound movements
+    const compoundMovements = strengthExercises.filter(ex => 
+      ex.muscle_group_secondary && ex.muscle_group_secondary.length > 0
+    );
+    
+    const isolationMovements = strengthExercises.filter(ex => 
+      !ex.muscle_group_secondary || ex.muscle_group_secondary.length === 0
+    );
+
+    const selectedExercises: ExerciseWithParams[] = [];
+
+    // Primary compound movement
+    if (compoundMovements.length > 0) {
+      const primaryLift = compoundMovements[Math.floor(Math.random() * compoundMovements.length)];
+      const progressiveParams = this.calculateProgressiveOverload(primaryLift, userProfile);
+      
+      selectedExercises.push({
+        ...primaryLift,
+        ...progressiveParams,
+        superset_group: archetype.metabolic_emphasis > 0.5 ? 1 : undefined
+      });
+    }
+
+    // Accessory movements (superset for metabolic effect)
+    const accessoryCount = archetype.metabolic_emphasis > 0.5 ? 3 : 2;
+    const shuffledAccessory = [...compoundMovements, ...isolationMovements]
+      .filter(ex => !selectedExercises.find(sel => sel.id === ex.id))
+      .sort(() => 0.5 - Math.random());
+
+    for (let i = 0; i < Math.min(accessoryCount, shuffledAccessory.length); i++) {
+      const params = this.calculateAccessoryParams(shuffledAccessory[i], userProfile);
+      selectedExercises.push({
+        ...shuffledAccessory[i],
+        ...params,
+        superset_group: archetype.metabolic_emphasis > 0.5 ? (i % 2) + 1 : undefined
+      });
+    }
+
+    return {
+      name: 'Strength & Power',
+      order,
+      exercises: selectedExercises
+    };
+  }
+
+  /**
+   * Builds a metabolic conditioning block
+   */
+  private buildMetabolicBlock(exercises: Exercise[], userProfile: UserProfile, order: number, archetype: any): WorkoutBlock {
+    const metabolicExercises = exercises.filter(ex => 
+      ex.exercise_type === 'cardio' || 
+      ex.exercise_type === 'plyometrics' ||
+      (ex.exercise_type === 'strength' && ex.intensity_level === 'high')
+    );
+
+    const selectedExercises: ExerciseWithParams[] = [];
+    const shuffled = metabolicExercises.sort(() => 0.5 - Math.random());
+    
+    // Select 3-4 exercises for circuit
+    const circuitSize = Math.min(4, shuffled.length);
+    const workDuration = userProfile.fitness_level === 'beginner' ? 30 : 45;
+    const restDuration = userProfile.fitness_level === 'beginner' ? 60 : 30;
+
+    for (let i = 0; i < circuitSize; i++) {
+      selectedExercises.push({
+        ...shuffled[i],
+        duration_seconds: workDuration,
+        rest_seconds: restDuration,
+        rpe_target: userProfile.fitness_level === 'beginner' ? 7 : 8
+      });
+    }
+
+    return {
+      name: 'Metabolic Conditioning Circuit',
+      order,
+      exercises: selectedExercises,
+      rounds: userProfile.fitness_level === 'beginner' ? 2 : 3,
+      rest_between_rounds_seconds: 90
+    };
+  }
+
+  /**
+   * Builds a cool-down block
+   */
+  private buildCooldownBlock(exercises: Exercise[], userProfile: UserProfile, order: number): WorkoutBlock {
+    const staticStretches = exercises.filter(ex => 
+      ex.exercise_type === 'stretching' && 
+      (!ex.description?.includes('dynamic') || ex.description?.includes('static'))
+    );
+
+    const selectedExercises: ExerciseWithParams[] = [];
+    const shuffled = staticStretches.sort(() => 0.5 - Math.random());
+
+    for (let i = 0; i < Math.min(4, shuffled.length); i++) {
+      selectedExercises.push({
+        ...shuffled[i],
+        duration_seconds: 60,
+        sets: 1
+      });
+    }
+
+    return {
+      name: 'Cool-down & Recovery',
+      order,
+      exercises: selectedExercises
+    };
+  }
+
+  /**
+   * Builds a mobility-focused block
+   */
+  private buildMobilityBlock(exercises: Exercise[], userProfile: UserProfile, order: number): WorkoutBlock {
+    const mobilityExercises = exercises.filter(ex => 
+      ex.exercise_type === 'stretching' || 
+      (ex.exercise_type === 'strength' && ex.intensity_level === 'low')
+    );
+
+    const selectedExercises: ExerciseWithParams[] = [];
+    const shuffled = mobilityExercises.sort(() => 0.5 - Math.random());
+
+    for (let i = 0; i < Math.min(5, shuffled.length); i++) {
+      selectedExercises.push({
+        ...shuffled[i],
+        duration_seconds: 45,
+        sets: 2,
+        rest_seconds: 30
+      });
+    }
+
+    return {
+      name: 'Mobility & Movement Flow',
+      order,
+      exercises: selectedExercises
+    };
+  }
+
+  /**
+   * Builds an accessory work block
+   */
+  private buildAccessoryBlock(exercises: Exercise[], userProfile: UserProfile, order: number): WorkoutBlock {
+    const accessoryExercises = exercises.filter(ex => 
+      ex.exercise_type === 'strength' && 
+      ex.difficulty_level !== 'advanced'
+    );
+
+    const selectedExercises: ExerciseWithParams[] = [];
+    const shuffled = accessoryExercises.sort(() => 0.5 - Math.random());
+
+    for (let i = 0; i < Math.min(3, shuffled.length); i++) {
+      const params = this.calculateAccessoryParams(shuffled[i], userProfile);
+      selectedExercises.push({
+        ...shuffled[i],
+        ...params
+      });
+    }
+
+    return {
+      name: 'Accessory & Isolation',
+      order,
+      exercises: selectedExercises
+    };
+  }
+
+  /**
+   * Calculates progressive overload parameters for primary lifts
+   */
+  private calculateProgressiveOverload(exercise: Exercise, userProfile: UserProfile): any {
+    const oneRepMax = userProfile.one_rep_max_estimates?.[exercise.id];
+    
+    if (oneRepMax) {
+      // Use percentage-based programming
+      const intensity = userProfile.fitness_level === 'beginner' ? 0.7 : 0.8;
+      const weight = oneRepMax * intensity;
+      
+      return {
+        sets: userProfile.fitness_level === 'beginner' ? 3 : 4,
+        reps: userProfile.fitness_level === 'beginner' ? 10 : 8,
+        weight_kg: Math.round(weight * 10) / 10,
+        rest_seconds: 90,
+        rpe_target: 7
+      };
+    }
+
+    // Default parameters for new exercises
+    return {
+      sets: 3,
+      reps: userProfile.fitness_level === 'beginner' ? 12 : 10,
+      rest_seconds: 90,
+      rpe_target: 6
+    };
+  }
+
+  /**
+   * Calculates parameters for accessory exercises
+   */
+  private calculateAccessoryParams(exercise: Exercise, userProfile: UserProfile): any {
+    return {
+      sets: 3,
+      reps_min: 8,
+      reps_max: 12,
+      rest_seconds: 60,
+      rpe_target: userProfile.fitness_level === 'beginner' ? 6 : 7
+    };
+  }
+
+  /**
+   * Calculates workout metrics
+   */
+  private calculateWorkoutMetrics(blocks: WorkoutBlock[], archetype: any): any {
+    let estimatedDuration = 0;
+    
+    blocks.forEach(block => {
+      block.exercises.forEach(exercise => {
+        if (exercise.duration_seconds) {
+          estimatedDuration += exercise.duration_seconds * (exercise.sets || 1);
+        } else {
+          // Estimate time for rep-based exercises
+          const timePerSet = (exercise.reps || exercise.reps_max || 10) * 3; // 3 seconds per rep
+          estimatedDuration += timePerSet * (exercise.sets || 1);
+        }
+        
+        estimatedDuration += (exercise.rest_seconds || 60) * ((exercise.sets || 1) - 1);
+      });
+      
+      if (block.rounds && block.rounds > 1) {
+        estimatedDuration *= block.rounds;
+        estimatedDuration += (block.rest_between_rounds_seconds || 60) * (block.rounds - 1);
+      }
+    });
+
+    return {
+      estimated_duration_minutes: Math.round(estimatedDuration / 60),
+      difficulty_rating: this.calculateDifficultyRating(blocks),
+      metabolic_score: Math.round(archetype.metabolic_emphasis * 100),
+      strength_score: Math.round(archetype.strength_emphasis * 100)
+    };
+  }
+
+  /**
+   * Calculates difficulty rating based on exercise selection and parameters
+   */
+  private calculateDifficultyRating(blocks: WorkoutBlock[]): number {
+    let totalDifficulty = 0;
+    let exerciseCount = 0;
+
+    blocks.forEach(block => {
+      block.exercises.forEach(exercise => {
+        let difficulty = 5; // Base difficulty
+
+        if (exercise.difficulty_level === 'beginner') difficulty = 3;
+        else if (exercise.difficulty_level === 'intermediate') difficulty = 5;
+        else if (exercise.difficulty_level === 'advanced') difficulty = 8;
+
+        // Adjust based on intensity
+        if (exercise.rpe_target && exercise.rpe_target >= 8) difficulty += 2;
+        if (exercise.superset_group) difficulty += 1;
+
+        totalDifficulty += difficulty;
+        exerciseCount++;
+      });
+    });
+
+    return Math.min(10, Math.round(totalDifficulty / exerciseCount));
+  }
+
+  /**
+   * Generates empathetic coaching notes using LLM
+   */
+  private async generateCoachNotes(archetype: any, userProfile: UserProfile, blocks: WorkoutBlock[]): Promise<string> {
+    if (!openAIApiKey) {
+      return `Today's ${archetype.name} workout is designed specifically for your ${userProfile.primary_goal} goal. Focus on proper form and listen to your body throughout the session. You've got this! 💪`;
+    }
+
+    try {
+      const keyExercises = blocks
+        .flatMap(block => block.exercises)
+        .slice(0, 3)
+        .map(ex => ex.name)
+        .join(', ');
+
+      const phoenixScore = userProfile.phoenix_score || 75;
+      
+      const prompt = `You are Phoenix, a world-class, empathetic, and encouraging personal trainer. Your client's profile:
+      
+Name: (Keep anonymous, use "you" or "friend")
+Primary Goal: ${userProfile.primary_goal.replace('_', ' ')}
+Fitness Level: ${userProfile.fitness_level}
+Phoenix Readiness Score: ${phoenixScore}/100
+Workout Type: ${archetype.name}
+Key Exercises: ${keyExercises}
+Estimated Duration: ${this.calculateWorkoutMetrics(blocks, archetype).estimated_duration_minutes} minutes
+
+Write a brief, motivational "Coach's Note" (2-3 sentences) that:
+1. Acknowledges their readiness level
+2. Explains the workout's purpose 
+3. Provides encouraging motivation
+4. Includes specific guidance for their goal
+
+Keep it personal, positive, and actionable. Use a warm, supportive tone.`;
+
+      const response = await fetch('https://api.openai.com/v1/chat/completions', {
+        method: 'POST',
+        headers: {
+          'Authorization': `Bearer ${openAIApiKey}`,
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          model: 'gpt-4o-mini',
+          messages: [
+            { role: 'system', content: 'You are Phoenix, an empathetic and encouraging personal trainer who provides brief, motivational coaching notes.' },
+            { role: 'user', content: prompt }
+          ],
+          temperature: 0.7,
+          max_tokens: 200
+        }),
+      });
+
+      if (response.ok) {
+        const data = await response.json();
+        return data.choices[0].message.content.trim();
+      }
+    } catch (error) {
+      console.error('⚠️ Error generating coach notes:', error);
+    }
+
+    // Fallback coaching note
+    return `Today's ${archetype.name} workout is perfectly calibrated for your current readiness level. Remember to focus on quality over quantity - every rep is building a stronger, more resilient you. Trust the process and give it your best effort! 🔥`;
+  }
+
+  /**
+   * Logs workout generation for analytics and future improvements
+   */
+  private async logWorkoutGeneration(userProfile: UserProfile, archetype: any, workout: GeneratedWorkout): Promise<void> {
+    try {
+      await this.supabase
+        .from('workout_generations')
+        .insert({
+          user_id: userProfile.user_id,
+          archetype_id: archetype.id,
+          generation_context: {
+            phoenix_score: userProfile.phoenix_score,
+            fitness_level: userProfile.fitness_level,
+            primary_goal: userProfile.primary_goal,
+            available_equipment: userProfile.available_equipment
+          },
+          generated_workout: workout,
+          phoenix_score_at_generation: userProfile.phoenix_score || 75
+        });
+    } catch (error) {
+      console.error('⚠️ Error logging workout generation:', error);
+    }
+  }
+
+  /**
+   * Real-time workout adaptation during session
+   */
+  async adaptWorkout(currentWorkout: GeneratedWorkout, feedback: {
+    exerciseId: string;
+    rpe?: number;
+    pain_signal?: string;
+    difficulty_feedback?: string;
+  }): Promise<GeneratedWorkout> {
+    const { exerciseId, rpe, pain_signal, difficulty_feedback } = feedback;
+
+    // Find and modify the specific exercise
+    for (const block of currentWorkout.blocks) {
+      const exerciseIndex = block.exercises.findIndex(ex => ex.id === exerciseId);
+      
+      if (exerciseIndex > -1) {
+        const currentExercise = block.exercises[exerciseIndex];
+
+        // Handle pain signals - immediate substitution
+        if (pain_signal) {
+          const alternative = await this.findSafeAlternative(currentExercise);
+          if (alternative) {
+            block.exercises[exerciseIndex] = {
+              ...alternative,
+              sets: currentExercise.sets,
+              reps: currentExercise.reps,
+              duration_seconds: currentExercise.duration_seconds
+            };
+            
+            currentWorkout.coachNotes += `\n\n🚨 I noticed you felt some discomfort, so I've swapped that exercise for a safer alternative. Always listen to your body - you're making the right choice!`;
+          }
+          break;
+        }
+
+        // Handle high RPE - reduce intensity
+        if (rpe && rpe >= 9) {
+          if (currentExercise.weight_kg) {
+            currentExercise.weight_kg = Math.round((currentExercise.weight_kg * 0.9) * 10) / 10;
+          }
+          if (currentExercise.reps && currentExercise.reps > 6) {
+            currentExercise.reps -= 2;
+          }
+          
+          currentWorkout.coachNotes += `\n\n💡 I've adjusted the intensity based on your feedback. Quality over quantity - you're doing great!`;
+        }
+
+        // Handle difficulty feedback
+        if (difficulty_feedback === 'too_easy' && currentExercise.weight_kg) {
+          currentExercise.weight_kg = Math.round((currentExercise.weight_kg * 1.1) * 10) / 10;
+        }
+        
+        break;
+      }
+    }
+
+    return currentWorkout;
+  }
+
+  /**
+   * Finds a safe alternative exercise
+   */
+  private async findSafeAlternative(exercise: ExerciseWithParams): Promise<Exercise | null> {
+    const { data: alternatives } = await this.supabase
+      .from('exercises')
+      .select('*')
+      .eq('muscle_group_primary', exercise.muscle_group_primary)
+      .eq('is_approved', true)
+      .neq('id', exercise.id)
+      .limit(5);
+
+    if (alternatives && alternatives.length > 0) {
+      // Return a simpler/safer alternative (preferring lower difficulty)
+      return alternatives.find(alt => alt.difficulty_level === 'beginner') || alternatives[0];
+    }
+
+    return null;
+  }
+}
+
+serve(async (req) => {
+  if (req.method === 'OPTIONS') {
+    return new Response(null, { headers: corsHeaders });
+  }
+
+  try {
+    const { action, userProfile, currentWorkout, feedback } = await req.json();
+    
+    // Verify user authentication
+    const authHeader = req.headers.get('Authorization');
+    if (!authHeader) {
+      throw new Error('No authorization header');
+    }
+
+    const token = authHeader.replace('Bearer ', '');
+    const { data: { user }, error: authError } = await supabase.auth.getUser(token);
+    
+    if (authError || !user) {
+      throw new Error('Unauthorized');
+    }
+
+    const engine = new PhoenixWorkoutEngine(supabase);
+
+    let result;
+
+    switch (action) {
+      case 'generate':
+        // Get user profile if not provided
+        if (!userProfile) {
+          const { data: profile } = await supabase
+            .from('profiles')
+            .select('*')
+            .eq('user_id', user.id)
+            .single();
+
+          if (!profile) {
+            throw new Error('User profile not found');
+          }
+
+          // Get current Phoenix Score
+          const { data: latestScore } = await supabase
+            .from('phoenix_scores')
+            .select('overall_score')
+            .eq('user_id', user.id)
+            .order('date', { ascending: false })
+            .limit(1)
+            .single();
+
+          const enhancedProfile = {
+            ...profile,
+            phoenix_score: latestScore?.overall_score || 75
+          };
+
+          result = await engine.generateWorkout(enhancedProfile);
+        } else {
+          result = await engine.generateWorkout({ ...userProfile, user_id: user.id });
+        }
+        break;
+
+      case 'adapt':
+        if (!currentWorkout || !feedback) {
+          throw new Error('Current workout and feedback required for adaptation');
+        }
+        result = await engine.adaptWorkout(currentWorkout, feedback);
+        break;
+
+      default:
+        throw new Error('Invalid action. Use "generate" or "adapt"');
+    }
+
+    return new Response(JSON.stringify(result), {
+      headers: { ...corsHeaders, 'Content-Type': 'application/json' }
+    });
+
+  } catch (error) {
+    console.error('❌ Phoenix Workout Engine Error:', error);
+    return new Response(
+      JSON.stringify({ 
+        error: error.message || 'Internal server error',
+        details: 'Phoenix Workout Engine encountered an error'
+      }),
+      { 
+        status: 400,
+        headers: { ...corsHeaders, 'Content-Type': 'application/json' }
+      }
+    );
+  }
+});

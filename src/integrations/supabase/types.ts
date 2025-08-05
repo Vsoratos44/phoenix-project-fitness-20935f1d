@@ -493,27 +493,89 @@ export type Database = {
           },
         ]
       }
+      exercise_performance_history: {
+        Row: {
+          created_at: string
+          exercise_id: string | null
+          form_score: number | null
+          id: string
+          notes: string | null
+          performance_date: string
+          progressive_overload_applied: boolean | null
+          reps_completed: number | null
+          rest_period_seconds: number | null
+          rpe_rating: number | null
+          sets_completed: number | null
+          time_under_tension_seconds: number | null
+          user_id: string
+          weight_used_kg: number | null
+          workout_session_id: string | null
+        }
+        Insert: {
+          created_at?: string
+          exercise_id?: string | null
+          form_score?: number | null
+          id?: string
+          notes?: string | null
+          performance_date: string
+          progressive_overload_applied?: boolean | null
+          reps_completed?: number | null
+          rest_period_seconds?: number | null
+          rpe_rating?: number | null
+          sets_completed?: number | null
+          time_under_tension_seconds?: number | null
+          user_id: string
+          weight_used_kg?: number | null
+          workout_session_id?: string | null
+        }
+        Update: {
+          created_at?: string
+          exercise_id?: string | null
+          form_score?: number | null
+          id?: string
+          notes?: string | null
+          performance_date?: string
+          progressive_overload_applied?: boolean | null
+          reps_completed?: number | null
+          rest_period_seconds?: number | null
+          rpe_rating?: number | null
+          sets_completed?: number | null
+          time_under_tension_seconds?: number | null
+          user_id?: string
+          weight_used_kg?: number | null
+          workout_session_id?: string | null
+        }
+        Relationships: []
+      }
       exercises: {
         Row: {
           animation_url: string | null
+          biomechanics_notes: string | null
           category_id: string | null
           common_mistakes: Json | null
           created_at: string
           created_by: string | null
           description: string | null
           difficulty_level: string | null
+          equipment_alternatives: Json | null
           equipment_required: Json | null
           exercise_type: string | null
+          exercise_type_detailed: string | null
           form_cues: Json | null
           id: string
+          injury_contraindications: string[] | null
           instructions: Json | null
+          intensity_level: string | null
           is_approved: boolean | null
           is_bodyweight: boolean | null
           is_unilateral: boolean | null
           media_assets: Json | null
           met_value: number | null
+          muscle_group_primary: string | null
+          muscle_group_secondary: string[] | null
           name: string
           primary_muscle_groups: string[] | null
+          progression_data: Json | null
           requires_spotter: boolean | null
           secondary_muscle_groups: string[] | null
           thumbnail_url: string | null
@@ -523,24 +585,32 @@ export type Database = {
         }
         Insert: {
           animation_url?: string | null
+          biomechanics_notes?: string | null
           category_id?: string | null
           common_mistakes?: Json | null
           created_at?: string
           created_by?: string | null
           description?: string | null
           difficulty_level?: string | null
+          equipment_alternatives?: Json | null
           equipment_required?: Json | null
           exercise_type?: string | null
+          exercise_type_detailed?: string | null
           form_cues?: Json | null
           id?: string
+          injury_contraindications?: string[] | null
           instructions?: Json | null
+          intensity_level?: string | null
           is_approved?: boolean | null
           is_bodyweight?: boolean | null
           is_unilateral?: boolean | null
           media_assets?: Json | null
           met_value?: number | null
+          muscle_group_primary?: string | null
+          muscle_group_secondary?: string[] | null
           name: string
           primary_muscle_groups?: string[] | null
+          progression_data?: Json | null
           requires_spotter?: boolean | null
           secondary_muscle_groups?: string[] | null
           thumbnail_url?: string | null
@@ -550,24 +620,32 @@ export type Database = {
         }
         Update: {
           animation_url?: string | null
+          biomechanics_notes?: string | null
           category_id?: string | null
           common_mistakes?: Json | null
           created_at?: string
           created_by?: string | null
           description?: string | null
           difficulty_level?: string | null
+          equipment_alternatives?: Json | null
           equipment_required?: Json | null
           exercise_type?: string | null
+          exercise_type_detailed?: string | null
           form_cues?: Json | null
           id?: string
+          injury_contraindications?: string[] | null
           instructions?: Json | null
+          intensity_level?: string | null
           is_approved?: boolean | null
           is_bodyweight?: boolean | null
           is_unilateral?: boolean | null
           media_assets?: Json | null
           met_value?: number | null
+          muscle_group_primary?: string | null
+          muscle_group_secondary?: string[] | null
           name?: string
           primary_muscle_groups?: string[] | null
+          progression_data?: Json | null
           requires_spotter?: boolean | null
           secondary_muscle_groups?: string[] | null
           thumbnail_url?: string | null
@@ -1122,17 +1200,22 @@ export type Database = {
           dietary_restrictions: Json | null
           display_name: string | null
           email: string
+          exercise_preferences: Json | null
           fitness_level: string | null
           gender: string | null
           height_cm: number | null
           id: string
+          injury_history_summary: Json | null
           medical_conditions: Json | null
           onboarding_completed: boolean | null
           onboarding_step: number | null
+          one_rep_max_estimates: Json | null
           phone_number: string | null
           preferred_workout_duration: number | null
+          preferred_workout_style: string | null
           primary_goal: string | null
           timezone: string | null
+          training_frequency_goal: number | null
           updated_at: string
           user_id: string
           weight_kg: number | null
@@ -1146,17 +1229,22 @@ export type Database = {
           dietary_restrictions?: Json | null
           display_name?: string | null
           email: string
+          exercise_preferences?: Json | null
           fitness_level?: string | null
           gender?: string | null
           height_cm?: number | null
           id?: string
+          injury_history_summary?: Json | null
           medical_conditions?: Json | null
           onboarding_completed?: boolean | null
           onboarding_step?: number | null
+          one_rep_max_estimates?: Json | null
           phone_number?: string | null
           preferred_workout_duration?: number | null
+          preferred_workout_style?: string | null
           primary_goal?: string | null
           timezone?: string | null
+          training_frequency_goal?: number | null
           updated_at?: string
           user_id: string
           weight_kg?: number | null
@@ -1170,17 +1258,22 @@ export type Database = {
           dietary_restrictions?: Json | null
           display_name?: string | null
           email?: string
+          exercise_preferences?: Json | null
           fitness_level?: string | null
           gender?: string | null
           height_cm?: number | null
           id?: string
+          injury_history_summary?: Json | null
           medical_conditions?: Json | null
           onboarding_completed?: boolean | null
           onboarding_step?: number | null
+          one_rep_max_estimates?: Json | null
           phone_number?: string | null
           preferred_workout_duration?: number | null
+          preferred_workout_style?: string | null
           primary_goal?: string | null
           timezone?: string | null
+          training_frequency_goal?: number | null
           updated_at?: string
           user_id?: string
           weight_kg?: number | null
@@ -1596,6 +1689,93 @@ export type Database = {
           },
         ]
       }
+      user_injury_history: {
+        Row: {
+          affected_area: string
+          alternative_exercises: string[] | null
+          contraindicated_exercises: string[] | null
+          created_at: string
+          id: string
+          injury_type: string
+          notes: string | null
+          onset_date: string | null
+          recovery_date: string | null
+          severity: string | null
+          status: string | null
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          affected_area: string
+          alternative_exercises?: string[] | null
+          contraindicated_exercises?: string[] | null
+          created_at?: string
+          id?: string
+          injury_type: string
+          notes?: string | null
+          onset_date?: string | null
+          recovery_date?: string | null
+          severity?: string | null
+          status?: string | null
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          affected_area?: string
+          alternative_exercises?: string[] | null
+          contraindicated_exercises?: string[] | null
+          created_at?: string
+          id?: string
+          injury_type?: string
+          notes?: string | null
+          onset_date?: string | null
+          recovery_date?: string | null
+          severity?: string | null
+          status?: string | null
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
+      workout_archetypes: {
+        Row: {
+          created_at: string
+          description: string | null
+          fitness_level_range: string[] | null
+          id: string
+          metabolic_emphasis: number | null
+          name: string
+          phoenix_score_range: Json | null
+          primary_goals: string[] | null
+          strength_emphasis: number | null
+          structure_template: Json
+        }
+        Insert: {
+          created_at?: string
+          description?: string | null
+          fitness_level_range?: string[] | null
+          id?: string
+          metabolic_emphasis?: number | null
+          name: string
+          phoenix_score_range?: Json | null
+          primary_goals?: string[] | null
+          strength_emphasis?: number | null
+          structure_template?: Json
+        }
+        Update: {
+          created_at?: string
+          description?: string | null
+          fitness_level_range?: string[] | null
+          id?: string
+          metabolic_emphasis?: number | null
+          name?: string
+          phoenix_score_range?: Json | null
+          primary_goals?: string[] | null
+          strength_emphasis?: number | null
+          structure_template?: Json
+        }
+        Relationships: []
+      }
       workout_exercises: {
         Row: {
           created_at: string
@@ -1667,6 +1847,42 @@ export type Database = {
             referencedColumns: ["id"]
           },
         ]
+      }
+      workout_generations: {
+        Row: {
+          adaptation_history: Json | null
+          archetype_id: string | null
+          created_at: string
+          generated_workout: Json
+          generation_context: Json
+          id: string
+          phoenix_score_at_generation: number | null
+          user_feedback: Json | null
+          user_id: string
+        }
+        Insert: {
+          adaptation_history?: Json | null
+          archetype_id?: string | null
+          created_at?: string
+          generated_workout: Json
+          generation_context?: Json
+          id?: string
+          phoenix_score_at_generation?: number | null
+          user_feedback?: Json | null
+          user_id: string
+        }
+        Update: {
+          adaptation_history?: Json | null
+          archetype_id?: string | null
+          created_at?: string
+          generated_workout?: Json
+          generation_context?: Json
+          id?: string
+          phoenix_score_at_generation?: number | null
+          user_feedback?: Json | null
+          user_id?: string
+        }
+        Relationships: []
       }
       workout_programs: {
         Row: {
