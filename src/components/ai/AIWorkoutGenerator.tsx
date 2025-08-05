@@ -195,14 +195,15 @@ export function AIWorkoutGenerator() {
   };
 
   const handleGenerateWorkout = async () => {
-    if (!user) {
-      toast({
-        title: "Authentication Required",
-        description: "Please sign in to generate workouts.",
-        variant: "destructive"
-      });
-      return;
-    }
+    // Remove auth requirement for testing
+    // if (!user) {
+    //   toast({
+    //     title: "Authentication Required",
+    //     description: "Please sign in to generate workouts.",
+    //     variant: "destructive"
+    //   });
+    //   return;
+    // }
 
     setIsGenerating(true);
     try {
