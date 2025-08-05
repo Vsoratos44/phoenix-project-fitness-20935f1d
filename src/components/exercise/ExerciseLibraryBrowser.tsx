@@ -29,17 +29,18 @@ interface Exercise {
   description?: string;
   category: string;
   exercise_type: string;
+  exercise_type_detailed: string;
   difficulty_level: string;
   intensity_level: string;
   muscle_group_primary: string;
-  muscle_group_secondary: string[];
-  equipment_required: string[];
-  instructions: string[];
-  form_cues: string[];
-  common_mistakes: string[];
-  contraindications: string[];
-  modifications: any[];
-  variations: any[];
+  muscle_group_secondary: string[] | null;
+  equipment_required: string[] | null;
+  instructions: string[] | null;
+  form_cues: string[] | null;
+  common_mistakes: string[] | null;
+  contraindications: string[] | null;
+  modifications: any[] | null;
+  variations: any[] | null;
   met_value: number;
   is_bodyweight: boolean;
   requires_spotter: boolean;
@@ -100,7 +101,12 @@ export default function ExerciseLibraryBrowser() {
         .order('name');
 
       if (error) throw error;
-      setExercises((data || []) as Exercise[]);
+      setExercises((data || []).map((item: any) => ({
+        ...item,
+        category: item.exercise_type || 'strength',
+        contraindications: item.injury_contraindications || [],
+        modifications: item.equipment_alternatives || []
+      })) as Exercise[]);
     } catch (error) {
       console.error('Error loading exercises:', error);
       toast({
@@ -133,8 +139,8 @@ export default function ExerciseLibraryBrowser() {
         .eq('user_id', user?.id)
         .single();
 
-      if (profile?.available_equipment) {
-        setUserEquipment(profile.available_equipment);
+      if (profile?.available_equipment && Array.isArray(profile.available_equipment)) {
+        setUserEquipment(profile.available_equipment.map(String));
       }
     } catch (error) {
       console.error('Error loading user data:', error);
@@ -498,7 +504,7 @@ export default function ExerciseLibraryBrowser() {
                   {/* Exercise Details */}
                   <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
                     <div className="text-center p-3 bg-gray-50 rounded-lg">
-                      <Muscle className="h-6 w-6 mx-auto mb-2 text-blue-600" />
+                      <Target className="h-6 w-6 mx-auto mb-2 text-blue-600" />
                       <p className="text-sm font-semibold">Primary</p>
                       <p className="text-xs text-muted-foreground">{exercise.muscle_group_primary}</p>
                     </div>
