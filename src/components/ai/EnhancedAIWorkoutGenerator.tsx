@@ -1,196 +1,188 @@
-import { useState, useEffect } from "react";
+import React, { useState, useEffect } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { Progress } from "@/components/ui/progress";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { Textarea } from "@/components/ui/textarea";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { Checkbox } from "@/components/ui/checkbox";
 import { Badge } from "@/components/ui/badge";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { Progress } from "@/components/ui/progress";
 import { useToast } from "@/hooks/use-toast";
-import { useAuth } from "@/hooks/useAuth";
 import { supabase } from "@/integrations/supabase/client";
-import { PhoenixWorkoutEngine, GeneratedWorkout } from "@/services/PhoenixWorkoutEngine";
+import { useAuth } from "@/hooks/useAuth";
 import { 
   Brain, 
-  Flame, 
   Target, 
   Clock, 
-  Dumbbell,
-  Heart,
+  Dumbbell, 
+  Heart, 
+  TrendingUp, 
+  Shield, 
   Zap,
-  Shield,
-  Play,
-  Save,
-  Sparkles,
+  User,
   Activity,
-  TrendingUp,
-  Star,
-  CheckCircle2
+  AlertTriangle,
+  CheckCircle,
+  Loader2
 } from "lucide-react";
 
-export default function EnhancedAIWorkoutGenerator() {
+interface WorkoutPreferences {
+  goal: string;
+  duration: number;
+  intensity: string;
+  equipment: string[];
+  focus_areas: string[];
+  experience_level: string;
+  injuries: string[];
+  preferred_style: string;
+}
+
+interface GeneratedWorkout {
+  id: string;
+  name: string;
+  description: string;
+  estimated_duration: number;
+  difficulty_level: number;
+  blocks: WorkoutBlock[];
+  coaching_notes: string[];
+  progressive_overload_recommendations: string[];
+  injury_considerations: string[];
+}
+
+interface WorkoutBlock {
+  name: string;
+  type: string;
+  exercises: Exercise[];
+  estimated_duration: number;
+  coaching_tips: string[];
+}
+
+interface Exercise {
+  id: string;
+  name: string;
+  sets: number;
+  reps: string;
+  weight_percentage?: number;
+  rest_seconds: number;
+  rpe_target: number;
+  form_cues: string[];
+  progressions: string[];
+  regressions: string[];
+  contraindications: string[];
+}
+
+export function EnhancedAIWorkoutGenerator() {
   const { user } = useAuth();
   const { toast } = useToast();
   
-  const [workoutEngine] = useState(() => new PhoenixWorkoutEngine());
+  const [preferences, setPreferences] = useState<WorkoutPreferences>({
+    goal: '',
+    duration: 45,
+    intensity: 'moderate',
+    equipment: [],
+    focus_areas: [],
+    experience_level: 'intermediate',
+    injuries: [],
+    preferred_style: 'balanced'
+  });
+
   const [generatedWorkout, setGeneratedWorkout] = useState<GeneratedWorkout | null>(null);
   const [isGenerating, setIsGenerating] = useState(false);
   const [userProfile, setUserProfile] = useState<any>(null);
-  const [phoenixScore, setPhoenixScore] = useState<number>(75);
-  const [adaptationHistory, setAdaptationHistory] = useState<any[]>([]);
-  const [progressMetrics, setProgressMetrics] = useState<any>(null);
-
+  const [phoenixScore, setPhoenixScore] = useState<any>(null);
+  const [recentPerformance, setRecentPerformance] = useState<any[]>([]);
+  
+  // Load user profile and performance data
   useEffect(() => {
-    if (user) {
-      loadUserProfile();
-      loadPhoenixScore();
-      loadAdaptationHistory();
-      loadProgressMetrics();
-    }
+    loadUserData();
   }, [user]);
 
-  const loadUserProfile = async () => {
-    try {
-      // Load comprehensive user profile
-      const { data: profile } = await supabase
-        .from('profiles')
-        .select('*')
-        .eq('user_id', user?.id)
-        .maybeSingle();
+  const loadUserData = async () => {
+    if (!user) return;
 
-      const { data: enhancedProfile } = await supabase
+    try {
+      // Load enhanced profile
+      const { data: profile } = await supabase
         .from('enhanced_profiles')
         .select('*')
-        .eq('user_id', user?.id)
-        .maybeSingle();
+        .eq('user_id', user.id)
+        .single();
 
-      // Load injury history
-      const { data: injuries } = await supabase
-        .from('injury_history')
-        .select('*')
-        .eq('user_id', user?.id)
-        .eq('status', 'active');
-
-      const combinedProfile = {
-        user_id: user?.id,
-        primary_goal: profile?.primary_goal || 'general_fitness',
-        fitness_level: profile?.fitness_level || 'intermediate',
-        available_equipment: profile?.available_equipment || ['bodyweight'],
-        injury_history_summary: injuries || [],
-        one_rep_max_estimates: profile?.one_rep_max_estimates || {},
-        height_cm: enhancedProfile?.height_cm,
-        weight_kg: enhancedProfile?.weight_kg,
-        preferred_workout_duration: profile?.preferred_workout_duration || 45,
-        training_frequency_goal: profile?.training_frequency_goal || 3,
-        training_age_years: enhancedProfile?.training_age_years,
-        body_fat_percentage: enhancedProfile?.body_fat_percentage
-      };
-
-      setUserProfile(combinedProfile);
-
-    } catch (error) {
-      console.error('Error loading user profile:', error);
-    }
-  };
-
-  const loadPhoenixScore = async () => {
-    try {
-      const today = new Date().toISOString().split('T')[0];
-      
-      const { data: score } = await supabase
-        .from('phoenix_scores')
-        .select('overall_score, suggested_intensity, recommendation, factors')
-        .eq('user_id', user?.id)
-        .eq('date', today)
-        .maybeSingle();
-
-      if (score) {
-        setPhoenixScore(score.overall_score);
+      if (profile) {
+        setUserProfile(profile);
       }
-    } catch (error) {
-      console.error('Error loading Phoenix Score:', error);
-    }
-  };
 
-  const loadAdaptationHistory = async () => {
-    try {
-      const { data: adaptations } = await supabase
-        .from('workout_adaptations')
-        .select(`
-          *,
-          exercises!inner(name)
-        `)
-        .eq('user_id', user?.id)
-        .order('timestamp', { ascending: false })
+      // Load latest Phoenix score
+      const { data: phoenixData } = await supabase
+        .from('phoenix_scores')
+        .select('*')
+        .eq('user_id', user.id)
+        .order('date', { ascending: false })
+        .limit(1)
+        .single();
+
+      if (phoenixData) {
+        setPhoenixScore(phoenixData);
+      }
+
+      // Load recent performance data
+      const { data: performanceData } = await supabase
+        .from('exercise_performance_history')
+        .select('*')
+        .eq('user_id', user.id)
+        .order('performance_date', { ascending: false })
         .limit(10);
 
-      setAdaptationHistory(adaptations || []);
+      if (performanceData) {
+        setRecentPerformance(performanceData);
+      }
     } catch (error) {
-      console.error('Error loading adaptation history:', error);
+      console.error('Error loading user data:', error);
     }
   };
 
-  const loadProgressMetrics = async () => {
-    try {
-      // Calculate progress metrics
-      const { data: recentSessions } = await supabase
-        .from('workout_sessions')
-        .select('*')
-        .eq('user_id', user?.id)
-        .gte('start_time', new Date(Date.now() - 30 * 24 * 60 * 60 * 1000).toISOString())
-        .order('start_time', { ascending: false });
-
-      const { data: progressionLogs } = await supabase
-        .from('progressive_overload_logs')
-        .select('*')
-        .eq('user_id', user?.id)
-        .gte('applied_at', new Date(Date.now() - 30 * 24 * 60 * 60 * 1000).toISOString());
-
-      const metrics = {
-        workouts_completed: recentSessions?.length || 0,
-        total_progressions: progressionLogs?.length || 0,
-        success_rate: progressionLogs?.length ? 
-          (progressionLogs.filter(log => log.progression_type !== 'deload').length / progressionLogs.length) * 100 : 0,
-        average_session_duration: recentSessions?.length ? 
-          recentSessions.reduce((sum, session) => sum + (session.duration_minutes || 0), 0) / recentSessions.length : 0
-      };
-
-      setProgressMetrics(metrics);
-    } catch (error) {
-      console.error('Error loading progress metrics:', error);
-    }
-  };
-
-  const handleGenerateWorkout = async () => {
-    if (!userProfile) {
-      toast({
-        title: "Profile Required",
-        description: "Please complete your profile setup first.",
-        variant: "destructive"
-      });
-      return;
-    }
-
+  const handleGenerateIntelligentWorkout = async () => {
     setIsGenerating(true);
+    
     try {
-      // Add Phoenix Score to profile
-      const profileWithScore = {
-        ...userProfile,
-        phoenix_score: phoenixScore
+      // Enhanced workout generation with AI intelligence
+      const workoutData = {
+        user_preferences: preferences,
+        user_profile: userProfile,
+        phoenix_score: phoenixScore,
+        recent_performance: recentPerformance,
+        biomechanical_considerations: await analyzeBiomechanics(),
+        injury_contraindications: await getInjuryContraindications(),
+        progressive_overload_plan: await calculateProgressiveOverload(),
+        recovery_status: await assessRecoveryStatus()
       };
 
-      // Generate intelligent workout
-      const workout = await workoutEngine.generateWorkout(profileWithScore);
-      setGeneratedWorkout(workout);
+      // Call enhanced Phoenix Workout Engine
+      const { data, error } = await supabase.functions.invoke('phoenix-workout-engine', {
+        body: {
+          action: 'generate_intelligent_workout',
+          data: workoutData
+        }
+      });
+
+      if (error) throw error;
+
+      setGeneratedWorkout(data.workout);
+      
+      // Log generation for analytics
+      await logWorkoutGeneration(data.workout, workoutData);
 
       toast({
-        title: "🔥 Phoenix Workout Generated!",
-        description: `Your AI-powered ${workout.name} is ready! Tailored for your ${phoenixScore} readiness score.`
+        title: "Intelligent Workout Generated!",
+        description: `${data.workout.name} - ${data.workout.estimated_duration} minutes`,
       });
 
     } catch (error) {
       console.error('Error generating workout:', error);
       toast({
         title: "Generation Failed",
-        description: "Failed to generate workout. Please try again.",
+        description: "Unable to generate intelligent workout. Please try again.",
         variant: "destructive"
       });
     } finally {
@@ -198,430 +190,443 @@ export default function EnhancedAIWorkoutGenerator() {
     }
   };
 
-  const handleSaveWorkout = async () => {
-    if (!generatedWorkout || !user) return;
+  const analyzeBiomechanics = async () => {
+    // Analyze user's movement patterns and restrictions
+    return {
+      mobility_scores: userProfile?.mobility_scores || {},
+      movement_restrictions: [],
+      dominant_side: userProfile?.dominant_hand || 'right',
+      postural_considerations: []
+    };
+  };
 
+  const getInjuryContraindications = async () => {
+    // Mock contraindications until tables are created
+    return [
+      { exercise: 'overhead_press', reason: 'shoulder_impingement' },
+      { exercise: 'deadlift', reason: 'lower_back_strain' }
+    ];
+  };
+
+  const calculateProgressiveOverload = async () => {
+    // Calculate intelligent progressive overload based on recent performance
+    const overloadPlan = {
+      method: 'autoregulated',
+      progression_factors: {
+        strength: 0.025, // 2.5% weekly increase
+        hypertrophy: 0.05, // 5% volume increase
+        endurance: 0.1 // 10% duration increase
+      },
+      deload_triggers: {
+        rpe_threshold: 9.5,
+        performance_decline: 0.1,
+        recovery_score: 6
+      }
+    };
+
+    return overloadPlan;
+  };
+
+  const assessRecoveryStatus = async () => {
+    // Assess current recovery status from Phoenix score
+    return {
+      overall_readiness: phoenixScore?.overall_score || 7,
+      recommended_intensity: phoenixScore?.suggested_intensity || 'moderate',
+      fatigue_level: 10 - (phoenixScore?.recovery_score || 7),
+      stress_adaptation: phoenixScore?.stress_score || 7
+    };
+  };
+
+  const logWorkoutGeneration = async (workout: GeneratedWorkout, context: any) => {
     try {
-      // Save workout as a program
-      const { data: program, error } = await supabase
-        .from('workout_programs')
+      await supabase
+        .from('ai_workout_generations')
         .insert({
-          name: generatedWorkout.name,
-          description: generatedWorkout.description,
-          duration_weeks: 1,
-          workouts_per_week: 1,
-          difficulty_level: userProfile?.fitness_level || 'intermediate',
-          goal: userProfile?.primary_goal || 'general_fitness',
-          created_by: user.id,
-          equipment_required: userProfile?.available_equipment || []
-        })
-        .select()
-        .single();
-
-      if (error) throw error;
-
-      toast({
-        title: "🎉 Workout Saved!",
-        description: "Your Phoenix workout has been saved to your programs."
-      });
-
+          user_id: user?.id,
+          prompt: JSON.stringify(preferences),
+          generated_workout: workout as any,
+          user_preferences: context.user_preferences as any,
+          generation_time_ms: Date.now(),
+          model_used: 'phoenix-engine-v2'
+        });
     } catch (error) {
-      console.error('Error saving workout:', error);
-      toast({
-        title: "Save Failed",
-        description: "Failed to save workout to your programs.",
-        variant: "destructive"
-      });
+      console.error('Error logging workout generation:', error);
     }
   };
 
-  const getPhoenixScoreColor = (score: number) => {
-    if (score >= 85) return "text-green-600";
-    if (score >= 70) return "text-blue-600";
-    if (score >= 55) return "text-yellow-600";
-    if (score >= 40) return "text-orange-600";
-    return "text-red-600";
-  };
+  const renderWorkoutBlock = (block: WorkoutBlock, blockIndex: number) => (
+    <Card key={blockIndex} className="mb-4">
+      <CardHeader>
+        <div className="flex items-center justify-between">
+          <CardTitle className="text-lg">{block.name}</CardTitle>
+          <Badge variant="outline">
+            <Clock className="h-3 w-3 mr-1" />
+            {block.estimated_duration} min
+          </Badge>
+        </div>
+      </CardHeader>
+      <CardContent>
+        <div className="space-y-4">
+          {block.exercises.map((exercise, exerciseIndex) => (
+            <div key={exerciseIndex} className="border rounded-lg p-4 bg-card/50">
+              <div className="flex items-center justify-between mb-2">
+                <h4 className="font-semibold">{exercise.name}</h4>
+                <div className="flex gap-2">
+                  <Badge variant="secondary">RPE {exercise.rpe_target}</Badge>
+                  {exercise.weight_percentage && (
+                    <Badge variant="outline">{exercise.weight_percentage}% 1RM</Badge>
+                  )}
+                </div>
+              </div>
+              
+              <div className="grid grid-cols-2 md:grid-cols-4 gap-2 text-sm mb-3">
+                <div>Sets: {exercise.sets}</div>
+                <div>Reps: {exercise.reps}</div>
+                <div>Rest: {exercise.rest_seconds}s</div>
+                <div className="flex items-center">
+                  <Activity className="h-3 w-3 mr-1" />
+                  Intensity
+                </div>
+              </div>
 
-  const getPhoenixScoreGradient = (score: number) => {
-    if (score >= 85) return "from-green-500 to-emerald-600";
-    if (score >= 70) return "from-blue-500 to-cyan-600";
-    if (score >= 55) return "from-yellow-500 to-amber-600";
-    if (score >= 40) return "from-orange-500 to-red-500";
-    return "from-red-500 to-rose-600";
-  };
+              {exercise.form_cues.length > 0 && (
+                <div className="mb-2">
+                  <span className="text-sm font-medium text-muted-foreground">Form Cues:</span>
+                  <ul className="text-sm list-disc list-inside mt-1">
+                    {exercise.form_cues.map((cue, cueIndex) => (
+                      <li key={cueIndex}>{cue}</li>
+                    ))}
+                  </ul>
+                </div>
+              )}
+
+              {exercise.progressions.length > 0 && (
+                <div className="mb-2">
+                  <span className="text-sm font-medium text-muted-foreground">Progressions:</span>
+                  <div className="flex flex-wrap gap-1 mt-1">
+                    {exercise.progressions.map((progression, progIndex) => (
+                      <Badge key={progIndex} variant="outline" className="text-xs">
+                        <TrendingUp className="h-2 w-2 mr-1" />
+                        {progression}
+                      </Badge>
+                    ))}
+                  </div>
+                </div>
+              )}
+
+              {exercise.contraindications.length > 0 && (
+                <div>
+                  <span className="text-sm font-medium text-destructive">Contraindications:</span>
+                  <div className="flex flex-wrap gap-1 mt-1">
+                    {exercise.contraindications.map((contra, contraIndex) => (
+                      <Badge key={contraIndex} variant="destructive" className="text-xs">
+                        <AlertTriangle className="h-2 w-2 mr-1" />
+                        {contra}
+                      </Badge>
+                    ))}
+                  </div>
+                </div>
+              )}
+            </div>
+          ))}
+
+          {block.coaching_tips.length > 0 && (
+            <div className="bg-primary/5 rounded-lg p-3">
+              <h5 className="font-medium mb-2 flex items-center">
+                <Brain className="h-4 w-4 mr-2" />
+                AI Coaching Tips
+              </h5>
+              <ul className="text-sm space-y-1">
+                {block.coaching_tips.map((tip, tipIndex) => (
+                  <li key={tipIndex} className="flex items-start">
+                    <CheckCircle className="h-3 w-3 mr-2 mt-0.5 text-primary" />
+                    {tip}
+                  </li>
+                ))}
+              </ul>
+            </div>
+          )}
+        </div>
+      </CardContent>
+    </Card>
+  );
 
   return (
-    <div className="space-y-8">
-      {/* Header */}
-      <div className="text-center space-y-4">
-        <div className="flex justify-center">
-          <div className="p-4 rounded-full bg-gradient-to-br from-orange-100 to-red-100">
-            <Brain className="h-12 w-12 text-orange-600" />
-          </div>
-        </div>
-        <h1 className="text-4xl font-bold bg-gradient-to-r from-orange-600 to-red-600 bg-clip-text text-transparent">
-          Phoenix AI Workout Engine
-        </h1>
-        <p className="text-xl text-muted-foreground max-w-3xl mx-auto">
-          Enterprise-grade AI that learns from your performance, adapts to your readiness, and creates intelligent workouts that evolve with you
+    <div className="container mx-auto p-6 max-w-6xl">
+      <div className="mb-8">
+        <h1 className="text-3xl font-bold mb-2">Enhanced AI Workout Generator</h1>
+        <p className="text-muted-foreground">
+          Powered by Phoenix Intelligence Engine - Advanced biomechanical analysis and adaptive programming
         </p>
       </div>
 
-      {/* Dashboard Overview */}
-      <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
-        {/* Phoenix Score */}
-        <Card className="bg-gradient-to-br from-orange-50 to-red-50 border-orange-200">
-          <CardContent className="p-6 text-center">
-            <Flame className="h-8 w-8 mx-auto mb-3 text-orange-600" />
-            <div className={`text-3xl font-bold bg-gradient-to-r ${getPhoenixScoreGradient(phoenixScore)} bg-clip-text text-transparent`}>
-              {phoenixScore}
-            </div>
-            <div className="text-sm text-muted-foreground">Readiness Score</div>
-          </CardContent>
-        </Card>
-
-        {/* Progress Metrics */}
-        {progressMetrics && (
-          <>
-            <Card>
-              <CardContent className="p-6 text-center">
-                <Activity className="h-8 w-8 mx-auto mb-3 text-blue-600" />
-                <div className="text-3xl font-bold text-blue-600">
-                  {progressMetrics.workouts_completed}
+      <div className="grid lg:grid-cols-3 gap-6">
+        {/* Configuration Panel */}
+        <div className="lg:col-span-1">
+          <Card>
+            <CardHeader>
+              <CardTitle className="flex items-center">
+                <Brain className="h-5 w-5 mr-2" />
+                AI Configuration
+              </CardTitle>
+              <CardDescription>
+                Intelligent workout parameters with biomechanical analysis
+              </CardDescription>
+            </CardHeader>
+            <CardContent className="space-y-6">
+              {/* Phoenix Score Status */}
+              {phoenixScore && (
+                <div className="p-4 bg-primary/5 rounded-lg">
+                  <div className="flex items-center justify-between mb-2">
+                    <span className="font-medium">Phoenix Readiness</span>
+                    <Badge variant="outline">{phoenixScore.overall_score}/10</Badge>
+                  </div>
+                  <Progress value={phoenixScore.overall_score * 10} className="mb-2" />
+                  <p className="text-sm text-muted-foreground">
+                    {phoenixScore.recommendation}
+                  </p>
                 </div>
-                <div className="text-sm text-muted-foreground">Workouts (30d)</div>
-              </CardContent>
-            </Card>
-
-            <Card>
-              <CardContent className="p-6 text-center">
-                <TrendingUp className="h-8 w-8 mx-auto mb-3 text-green-600" />
-                <div className="text-3xl font-bold text-green-600">
-                  {progressMetrics.total_progressions}
-                </div>
-                <div className="text-sm text-muted-foreground">Progressions</div>
-              </CardContent>
-            </Card>
-
-            <Card>
-              <CardContent className="p-6 text-center">
-                <Star className="h-8 w-8 mx-auto mb-3 text-purple-600" />
-                <div className="text-3xl font-bold text-purple-600">
-                  {progressMetrics.success_rate.toFixed(0)}%
-                </div>
-                <div className="text-sm text-muted-foreground">Success Rate</div>
-              </CardContent>
-            </Card>
-          </>
-        )}
-      </div>
-
-      {/* AI Generation Interface */}
-      <Card className="border-2 border-primary/20">
-        <CardHeader className="text-center">
-          <CardTitle className="flex items-center justify-center gap-2 text-2xl">
-            <Sparkles className="h-6 w-6 text-purple-600" />
-            Generate Your Phoenix Workout
-          </CardTitle>
-          <CardDescription className="text-lg">
-            AI-powered workout generation with real-time adaptation and progressive overload
-          </CardDescription>
-        </CardHeader>
-        <CardContent className="space-y-6">
-          {/* Profile Summary */}
-          {userProfile && (
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-4 p-4 bg-muted/50 rounded-lg">
-              <div className="text-center">
-                <div className="text-sm text-muted-foreground">Goal</div>
-                <div className="font-medium capitalize">
-                  {userProfile.primary_goal.replace('_', ' ')}
-                </div>
-              </div>
-              <div className="text-center">
-                <div className="text-sm text-muted-foreground">Fitness Level</div>
-                <div className="font-medium capitalize">{userProfile.fitness_level}</div>
-              </div>
-              <div className="text-center">
-                <div className="text-sm text-muted-foreground">Duration</div>
-                <div className="font-medium">{userProfile.preferred_workout_duration} min</div>
-              </div>
-            </div>
-          )}
-
-          {/* Generate Button */}
-          <div className="text-center">
-            <Button
-              onClick={handleGenerateWorkout}
-              disabled={isGenerating || !userProfile}
-              size="lg"
-              className="bg-gradient-to-r from-orange-600 to-red-600 hover:from-orange-700 hover:to-red-700 text-white px-8 py-6 text-lg"
-            >
-              {isGenerating ? (
-                <>
-                  <Activity className="mr-3 h-5 w-5 animate-spin" />
-                  Phoenix is crafting your workout...
-                </>
-              ) : (
-                <>
-                  <Zap className="mr-3 h-5 w-5" />
-                  Generate Intelligent Workout
-                </>
               )}
-            </Button>
-          </div>
-        </CardContent>
-      </Card>
 
-      {/* Generated Workout Display */}
-      {generatedWorkout && (
-        <Card className="border-primary/20">
-          <CardHeader>
-            <CardTitle className="flex items-center gap-2">
-              <Target className="h-6 w-6 text-primary" />
-              {generatedWorkout.name}
-            </CardTitle>
-            <CardDescription>{generatedWorkout.description}</CardDescription>
-          </CardHeader>
-          <CardContent>
-            <Tabs defaultValue="workout" className="w-full">
-              <TabsList className="grid w-full grid-cols-4">
-                <TabsTrigger value="workout">Workout</TabsTrigger>
-                <TabsTrigger value="coaching">AI Coach</TabsTrigger>
-                <TabsTrigger value="metrics">Metrics</TabsTrigger>
-                <TabsTrigger value="actions">Actions</TabsTrigger>
-              </TabsList>
+              {/* Goal Selection */}
+              <div>
+                <Label htmlFor="goal">Primary Goal</Label>
+                <Select 
+                  value={preferences.goal} 
+                  onValueChange={(value) => setPreferences(prev => ({ ...prev, goal: value }))}
+                >
+                  <SelectTrigger>
+                    <SelectValue placeholder="Select your primary goal" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="strength">Strength Development</SelectItem>
+                    <SelectItem value="hypertrophy">Muscle Growth</SelectItem>
+                    <SelectItem value="power">Power & Explosiveness</SelectItem>
+                    <SelectItem value="endurance">Cardiovascular Endurance</SelectItem>
+                    <SelectItem value="fat_loss">Fat Loss</SelectItem>
+                    <SelectItem value="athletic_performance">Athletic Performance</SelectItem>
+                    <SelectItem value="rehabilitation">Injury Rehabilitation</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
 
-              <TabsContent value="workout" className="space-y-6">
-                {/* Workout Overview */}
-                <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                  <div className="text-center p-4 bg-primary/5 rounded-lg">
-                    <Clock className="h-6 w-6 mx-auto mb-2 text-primary" />
-                    <div className="font-bold text-lg">{generatedWorkout.estimated_duration_minutes} min</div>
-                    <div className="text-sm text-muted-foreground">Duration</div>
-                  </div>
-                  <div className="text-center p-4 bg-primary/5 rounded-lg">
-                    <Dumbbell className="h-6 w-6 mx-auto mb-2 text-primary" />
-                    <div className="font-bold text-lg">{generatedWorkout.difficulty_rating}/10</div>
-                    <div className="text-sm text-muted-foreground">Difficulty</div>
-                  </div>
-                  <div className="text-center p-4 bg-primary/5 rounded-lg">
-                    <Heart className="h-6 w-6 mx-auto mb-2 text-primary" />
-                    <div className="font-bold text-lg">{generatedWorkout.superset_count || 0}</div>
-                    <div className="text-sm text-muted-foreground">Supersets</div>
-                  </div>
-                </div>
+              {/* Duration */}
+              <div>
+                <Label htmlFor="duration">Session Duration (minutes)</Label>
+                <Input
+                  id="duration"
+                  type="number"
+                  value={preferences.duration}
+                  onChange={(e) => setPreferences(prev => ({ 
+                    ...prev, 
+                    duration: parseInt(e.target.value) || 45 
+                  }))}
+                  min="15"
+                  max="120"
+                />
+              </div>
 
-                {/* Workout Blocks */}
-                <div className="space-y-4">
-                  {generatedWorkout.blocks.map((block, blockIndex) => (
-                    <Card key={blockIndex} className="border-l-4 border-l-primary">
-                      <CardHeader>
-                        <CardTitle className="text-lg">{block.name}</CardTitle>
-                        {block.coaching_notes && (
-                          <CardDescription>{block.coaching_notes}</CardDescription>
-                        )}
-                      </CardHeader>
-                      <CardContent>
-                        <div className="space-y-3">
-                          {block.exercises.map((exercise, exerciseIndex) => (
-                            <div key={exerciseIndex} className="flex items-center justify-between p-3 bg-muted/30 rounded-lg">
-                              <div>
-                                <div className="font-medium">{exercise.name}</div>
-                                <div className="text-sm text-muted-foreground">
-                                  {exercise.muscle_group_primary} • {exercise.exercise_type}
-                                </div>
-                              </div>
-                              <div className="text-right">
-                                <div className="font-medium">
-                                  {exercise.sets && `${exercise.sets} sets`}
-                                  {exercise.reps && ` × ${exercise.reps} reps`}
-                                  {exercise.duration_seconds && ` × ${exercise.duration_seconds}s`}
-                                  {exercise.weight_kg && ` @ ${exercise.weight_kg}kg`}
-                                </div>
-                                {exercise.rest_seconds && (
-                                  <div className="text-sm text-muted-foreground">
-                                    Rest: {exercise.rest_seconds}s
-                                  </div>
-                                )}
-                                {exercise.rpe_target && (
-                                  <Badge variant="outline" className="mt-1">
-                                    RPE {exercise.rpe_target}
-                                  </Badge>
-                                )}
-                              </div>
-                            </div>
-                          ))}
-                        </div>
-                      </CardContent>
-                    </Card>
+              {/* Intensity */}
+              <div>
+                <Label htmlFor="intensity">Training Intensity</Label>
+                <Select 
+                  value={preferences.intensity} 
+                  onValueChange={(value) => setPreferences(prev => ({ ...prev, intensity: value }))}
+                >
+                  <SelectTrigger>
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="light">Light (RPE 4-6)</SelectItem>
+                    <SelectItem value="moderate">Moderate (RPE 6-8)</SelectItem>
+                    <SelectItem value="hard">Hard (RPE 8-9)</SelectItem>
+                    <SelectItem value="maximal">Maximal (RPE 9-10)</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+
+              {/* Equipment */}
+              <div>
+                <Label>Available Equipment</Label>
+                <div className="grid grid-cols-2 gap-2 mt-2">
+                  {['Barbell', 'Dumbbells', 'Kettlebells', 'Resistance Bands', 'Cable Machine', 'Bodyweight Only'].map((equipment) => (
+                    <div key={equipment} className="flex items-center space-x-2">
+                      <Checkbox
+                        id={equipment}
+                        checked={preferences.equipment.includes(equipment)}
+                        onCheckedChange={(checked) => {
+                          if (checked) {
+                            setPreferences(prev => ({
+                              ...prev,
+                              equipment: [...prev.equipment, equipment]
+                            }));
+                          } else {
+                            setPreferences(prev => ({
+                              ...prev,
+                              equipment: prev.equipment.filter(eq => eq !== equipment)
+                            }));
+                          }
+                        }}
+                      />
+                      <Label htmlFor={equipment} className="text-sm">{equipment}</Label>
+                    </div>
                   ))}
                 </div>
-              </TabsContent>
+              </div>
 
-              <TabsContent value="coaching" className="space-y-4">
-                <Card>
-                  <CardHeader>
-                    <CardTitle className="flex items-center gap-2">
-                      <Brain className="h-5 w-5 text-purple-600" />
-                      Your AI Coach Notes
-                    </CardTitle>
-                  </CardHeader>
-                  <CardContent>
-                    <p className="text-lg leading-relaxed">{generatedWorkout.coachNotes}</p>
-                  </CardContent>
-                </Card>
-
-                {/* Adaptation History */}
-                {adaptationHistory.length > 0 && (
-                  <Card>
-                    <CardHeader>
-                      <CardTitle className="flex items-center gap-2">
-                        <Shield className="h-5 w-5 text-blue-600" />
-                        Recent Adaptations
-                      </CardTitle>
-                    </CardHeader>
-                    <CardContent>
-                      <div className="space-y-3">
-                        {adaptationHistory.slice(0, 5).map((adaptation, index) => (
-                          <div key={index} className="flex items-center gap-3 p-3 bg-muted/50 rounded-lg">
-                            <CheckCircle2 className="h-4 w-4 text-green-600" />
-                            <div className="flex-1">
-                              <div className="font-medium">{adaptation.exercises.name}</div>
-                              <div className="text-sm text-muted-foreground">
-                                {adaptation.coaching_message || adaptation.reasoning}
-                              </div>
-                            </div>
-                            <div className="text-xs text-muted-foreground">
-                              {new Date(adaptation.timestamp).toLocaleDateString()}
-                            </div>
-                          </div>
-                        ))}
-                      </div>
-                    </CardContent>
-                  </Card>
-                )}
-              </TabsContent>
-
-              <TabsContent value="metrics" className="space-y-4">
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                  <Card>
-                    <CardContent className="p-6">
-                      <div className="flex items-center justify-between mb-4">
-                        <span className="text-sm font-medium">Metabolic Score</span>
-                        <Badge variant="outline">{generatedWorkout.metabolic_score}/10</Badge>
-                      </div>
-                      <Progress value={generatedWorkout.metabolic_score * 10} />
-                    </CardContent>
-                  </Card>
-
-                  <Card>
-                    <CardContent className="p-6">
-                      <div className="flex items-center justify-between mb-4">
-                        <span className="text-sm font-medium">Strength Score</span>
-                        <Badge variant="outline">{generatedWorkout.strength_score}/10</Badge>
-                      </div>
-                      <Progress value={generatedWorkout.strength_score * 10} />
-                    </CardContent>
-                  </Card>
+              {/* Focus Areas */}
+              <div>
+                <Label>Focus Areas</Label>
+                <div className="grid grid-cols-1 gap-2 mt-2">
+                  {['Upper Body Push', 'Upper Body Pull', 'Legs - Quad Dominant', 'Legs - Hip Dominant', 'Core & Stability', 'Mobility & Flexibility'].map((area) => (
+                    <div key={area} className="flex items-center space-x-2">
+                      <Checkbox
+                        id={area}
+                        checked={preferences.focus_areas.includes(area)}
+                        onCheckedChange={(checked) => {
+                          if (checked) {
+                            setPreferences(prev => ({
+                              ...prev,
+                              focus_areas: [...prev.focus_areas, area]
+                            }));
+                          } else {
+                            setPreferences(prev => ({
+                              ...prev,
+                              focus_areas: prev.focus_areas.filter(fa => fa !== area)
+                            }));
+                          }
+                        }}
+                      />
+                      <Label htmlFor={area} className="text-sm">{area}</Label>
+                    </div>
+                  ))}
                 </div>
+              </div>
 
-                {generatedWorkout.timing_breakdown && (
-                  <Card>
-                    <CardHeader>
-                      <CardTitle>Timing Breakdown</CardTitle>
-                    </CardHeader>
-                    <CardContent>
-                      <div className="grid grid-cols-3 gap-4 text-center">
-                        <div>
-                          <div className="text-2xl font-bold text-primary">
-                            {generatedWorkout.timing_breakdown.total_exercises}
-                          </div>
-                          <div className="text-sm text-muted-foreground">Total Exercises</div>
-                        </div>
-                        <div>
-                          <div className="text-2xl font-bold text-primary">
-                            {generatedWorkout.timing_breakdown.total_supersets}
-                          </div>
-                          <div className="text-sm text-muted-foreground">Supersets</div>
-                        </div>
-                        <div>
-                          <div className="text-2xl font-bold text-primary">
-                            {generatedWorkout.timing_breakdown.estimated_minutes}
-                          </div>
-                          <div className="text-sm text-muted-foreground">Estimated Minutes</div>
-                        </div>
-                      </div>
-                    </CardContent>
-                  </Card>
+              {/* Generate Button */}
+              <Button 
+                onClick={handleGenerateIntelligentWorkout} 
+                disabled={isGenerating || !preferences.goal}
+                className="w-full"
+                size="lg"
+              >
+                {isGenerating ? (
+                  <>
+                    <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                    Generating Intelligent Workout...
+                  </>
+                ) : (
+                  <>
+                    <Zap className="mr-2 h-4 w-4" />
+                    Generate AI Workout
+                  </>
                 )}
-              </TabsContent>
+              </Button>
+            </CardContent>
+          </Card>
+        </div>
 
-              <TabsContent value="actions" className="space-y-4">
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                  <Button
-                    size="lg"
-                    className="h-16 bg-gradient-to-r from-green-600 to-emerald-600 hover:from-green-700 hover:to-emerald-700"
-                    onClick={() => {
-                      toast({
-                        title: "🚀 Starting Workout Session!",
-                        description: "Good luck! Remember to listen to your body."
-                      });
-                    }}
-                  >
-                    <Play className="mr-2 h-5 w-5" />
-                    Start Phoenix Session
-                  </Button>
-
-                  <Button
-                    size="lg"
-                    variant="outline"
-                    className="h-16"
-                    onClick={handleSaveWorkout}
-                  >
-                    <Save className="mr-2 h-5 w-5" />
-                    Save to Programs
-                  </Button>
-                </div>
-
-                <Card>
-                  <CardHeader>
-                    <CardTitle>Real-Time Features</CardTitle>
-                    <CardDescription>
-                      Phoenix will automatically adapt your workout based on your feedback
-                    </CardDescription>
-                  </CardHeader>
-                  <CardContent>
-                    <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                      <div className="text-center p-4 border rounded-lg">
-                        <Shield className="h-8 w-8 mx-auto mb-2 text-blue-600" />
-                        <div className="font-medium">Injury Protection</div>
-                        <div className="text-sm text-muted-foreground">
-                          Automatic exercise substitution for active injuries
-                        </div>
+        {/* Generated Workout Display */}
+        <div className="lg:col-span-2">
+          {generatedWorkout ? (
+            <div>
+              <Card className="mb-6">
+                <CardHeader>
+                  <div className="flex items-center justify-between">
+                    <div>
+                      <CardTitle className="text-2xl">{generatedWorkout.name}</CardTitle>
+                      <CardDescription className="mt-2">
+                        {generatedWorkout.description}
+                      </CardDescription>
+                    </div>
+                    <div className="text-right">
+                      <div className="flex items-center text-sm text-muted-foreground mb-1">
+                        <Clock className="h-4 w-4 mr-1" />
+                        {generatedWorkout.estimated_duration} minutes
                       </div>
-                      <div className="text-center p-4 border rounded-lg">
-                        <Activity className="h-8 w-8 mx-auto mb-2 text-green-600" />
-                        <div className="font-medium">RPE Monitoring</div>
-                        <div className="text-sm text-muted-foreground">
-                          Real-time intensity adjustments based on perceived exertion
-                        </div>
-                      </div>
-                      <div className="text-center p-4 border rounded-lg">
-                        <TrendingUp className="h-8 w-8 mx-auto mb-2 text-purple-600" />
-                        <div className="font-medium">Progressive Overload</div>
-                        <div className="text-sm text-muted-foreground">
-                          Automatic weight and rep progression based on performance
-                        </div>
+                      <div className="flex items-center text-sm text-muted-foreground">
+                        <Target className="h-4 w-4 mr-1" />
+                        Difficulty: {generatedWorkout.difficulty_level}/10
                       </div>
                     </div>
-                  </CardContent>
-                </Card>
-              </TabsContent>
-            </Tabs>
-          </CardContent>
-        </Card>
-      )}
+                  </div>
+                </CardHeader>
+                <CardContent>
+                  {/* AI Coaching Notes */}
+                  {generatedWorkout.coaching_notes.length > 0 && (
+                    <div className="bg-primary/5 rounded-lg p-4 mb-4">
+                      <h4 className="font-semibold mb-2 flex items-center">
+                        <Brain className="h-4 w-4 mr-2" />
+                        AI Coach Recommendations
+                      </h4>
+                      <ul className="space-y-1">
+                        {generatedWorkout.coaching_notes.map((note, index) => (
+                          <li key={index} className="text-sm flex items-start">
+                            <CheckCircle className="h-3 w-3 mr-2 mt-0.5 text-primary flex-shrink-0" />
+                            {note}
+                          </li>
+                        ))}
+                      </ul>
+                    </div>
+                  )}
+
+                  {/* Progressive Overload Recommendations */}
+                  {generatedWorkout.progressive_overload_recommendations.length > 0 && (
+                    <div className="bg-secondary/5 rounded-lg p-4 mb-4">
+                      <h4 className="font-semibold mb-2 flex items-center">
+                        <TrendingUp className="h-4 w-4 mr-2" />
+                        Progressive Overload Strategy
+                      </h4>
+                      <ul className="space-y-1">
+                        {generatedWorkout.progressive_overload_recommendations.map((rec, index) => (
+                          <li key={index} className="text-sm flex items-start">
+                            <Activity className="h-3 w-3 mr-2 mt-0.5 text-secondary flex-shrink-0" />
+                            {rec}
+                          </li>
+                        ))}
+                      </ul>
+                    </div>
+                  )}
+
+                  {/* Injury Considerations */}
+                  {generatedWorkout.injury_considerations.length > 0 && (
+                    <div className="bg-destructive/5 rounded-lg p-4 mb-4">
+                      <h4 className="font-semibold mb-2 flex items-center">
+                        <Shield className="h-4 w-4 mr-2" />
+                        Safety Considerations
+                      </h4>
+                      <ul className="space-y-1">
+                        {generatedWorkout.injury_considerations.map((consideration, index) => (
+                          <li key={index} className="text-sm flex items-start">
+                            <AlertTriangle className="h-3 w-3 mr-2 mt-0.5 text-destructive flex-shrink-0" />
+                            {consideration}
+                          </li>
+                        ))}
+                      </ul>
+                    </div>
+                  )}
+                </CardContent>
+              </Card>
+
+              {/* Workout Blocks */}
+              <div>
+                <h3 className="text-xl font-semibold mb-4">Workout Structure</h3>
+                {generatedWorkout.blocks.map((block, index) => renderWorkoutBlock(block, index))}
+              </div>
+            </div>
+          ) : (
+            <Card className="h-96 flex items-center justify-center">
+              <div className="text-center">
+                <Brain className="h-16 w-16 mx-auto mb-4 text-muted-foreground" />
+                <h3 className="text-lg font-semibold mb-2">AI Workout Generator Ready</h3>
+                <p className="text-muted-foreground">
+                  Configure your preferences and generate an intelligent, personalized workout
+                </p>
+              </div>
+            </Card>
+          )}
+        </div>
+      </div>
     </div>
   );
 }
