@@ -380,6 +380,164 @@ export type Database = {
           },
         ]
       }
+      daily_habit_logs: {
+        Row: {
+          completed: boolean | null
+          date: string
+          habit_id: string | null
+          id: string
+          logged_at: string | null
+          notes: string | null
+          user_id: string | null
+          value_achieved: number | null
+        }
+        Insert: {
+          completed?: boolean | null
+          date: string
+          habit_id?: string | null
+          id?: string
+          logged_at?: string | null
+          notes?: string | null
+          user_id?: string | null
+          value_achieved?: number | null
+        }
+        Update: {
+          completed?: boolean | null
+          date?: string
+          habit_id?: string | null
+          id?: string
+          logged_at?: string | null
+          notes?: string | null
+          user_id?: string | null
+          value_achieved?: number | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "daily_habit_logs_habit_id_fkey"
+            columns: ["habit_id"]
+            isOneToOne: false
+            referencedRelation: "habit_tracking"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      enhanced_profiles: {
+        Row: {
+          age: number | null
+          available_times: Json | null
+          body_fat_percentage: number | null
+          coaching_style: string | null
+          created_at: string | null
+          exercise_dislikes: string[] | null
+          exercise_preferences: string[] | null
+          gender: string | null
+          gym_access: boolean | null
+          height_cm: number | null
+          home_equipment: string[] | null
+          hrv_score: number | null
+          id: string
+          medical_conditions: string[] | null
+          medications: string[] | null
+          music_tempo_preference: string | null
+          onboarding_completed: boolean | null
+          onboarding_step: number | null
+          pain_areas: string[] | null
+          preferred_location: string | null
+          primary_goal: string | null
+          resting_heart_rate: number | null
+          session_duration_preference: number | null
+          sleep_quality_score: number | null
+          specific_focus: string[] | null
+          stress_level: number | null
+          target_weight_kg: number | null
+          time_constraints: string[] | null
+          timeline_weeks: number | null
+          training_frequency: number | null
+          training_level: string | null
+          updated_at: string | null
+          user_id: string | null
+          weight_kg: number | null
+          workout_days: string[] | null
+          workout_intensity_preference: string | null
+        }
+        Insert: {
+          age?: number | null
+          available_times?: Json | null
+          body_fat_percentage?: number | null
+          coaching_style?: string | null
+          created_at?: string | null
+          exercise_dislikes?: string[] | null
+          exercise_preferences?: string[] | null
+          gender?: string | null
+          gym_access?: boolean | null
+          height_cm?: number | null
+          home_equipment?: string[] | null
+          hrv_score?: number | null
+          id?: string
+          medical_conditions?: string[] | null
+          medications?: string[] | null
+          music_tempo_preference?: string | null
+          onboarding_completed?: boolean | null
+          onboarding_step?: number | null
+          pain_areas?: string[] | null
+          preferred_location?: string | null
+          primary_goal?: string | null
+          resting_heart_rate?: number | null
+          session_duration_preference?: number | null
+          sleep_quality_score?: number | null
+          specific_focus?: string[] | null
+          stress_level?: number | null
+          target_weight_kg?: number | null
+          time_constraints?: string[] | null
+          timeline_weeks?: number | null
+          training_frequency?: number | null
+          training_level?: string | null
+          updated_at?: string | null
+          user_id?: string | null
+          weight_kg?: number | null
+          workout_days?: string[] | null
+          workout_intensity_preference?: string | null
+        }
+        Update: {
+          age?: number | null
+          available_times?: Json | null
+          body_fat_percentage?: number | null
+          coaching_style?: string | null
+          created_at?: string | null
+          exercise_dislikes?: string[] | null
+          exercise_preferences?: string[] | null
+          gender?: string | null
+          gym_access?: boolean | null
+          height_cm?: number | null
+          home_equipment?: string[] | null
+          hrv_score?: number | null
+          id?: string
+          medical_conditions?: string[] | null
+          medications?: string[] | null
+          music_tempo_preference?: string | null
+          onboarding_completed?: boolean | null
+          onboarding_step?: number | null
+          pain_areas?: string[] | null
+          preferred_location?: string | null
+          primary_goal?: string | null
+          resting_heart_rate?: number | null
+          session_duration_preference?: number | null
+          sleep_quality_score?: number | null
+          specific_focus?: string[] | null
+          stress_level?: number | null
+          target_weight_kg?: number | null
+          time_constraints?: string[] | null
+          timeline_weeks?: number | null
+          training_frequency?: number | null
+          training_level?: string | null
+          updated_at?: string | null
+          user_id?: string | null
+          weight_kg?: number | null
+          workout_days?: string[] | null
+          workout_intensity_preference?: string | null
+        }
+        Relationships: []
+      }
       events: {
         Row: {
           created_at: string
@@ -744,6 +902,57 @@ export type Database = {
         }
         Relationships: []
       }
+      habit_tracking: {
+        Row: {
+          created_at: string | null
+          current_streak: number | null
+          habit_name: string
+          habit_type: string
+          id: string
+          is_active: boolean | null
+          longest_streak: number | null
+          success_rate: number | null
+          target_frequency: number
+          target_unit: string | null
+          target_value: number | null
+          total_completions: number | null
+          updated_at: string | null
+          user_id: string | null
+        }
+        Insert: {
+          created_at?: string | null
+          current_streak?: number | null
+          habit_name: string
+          habit_type: string
+          id?: string
+          is_active?: boolean | null
+          longest_streak?: number | null
+          success_rate?: number | null
+          target_frequency: number
+          target_unit?: string | null
+          target_value?: number | null
+          total_completions?: number | null
+          updated_at?: string | null
+          user_id?: string | null
+        }
+        Update: {
+          created_at?: string | null
+          current_streak?: number | null
+          habit_name?: string
+          habit_type?: string
+          id?: string
+          is_active?: boolean | null
+          longest_streak?: number | null
+          success_rate?: number | null
+          target_frequency?: number
+          target_unit?: string | null
+          target_value?: number | null
+          total_completions?: number | null
+          updated_at?: string | null
+          user_id?: string | null
+        }
+        Relationships: []
+      }
       marketplace_vendors: {
         Row: {
           api_endpoint: string | null
@@ -786,6 +995,78 @@ export type Database = {
           name?: string
           updated_at?: string
           website_url?: string | null
+        }
+        Relationships: []
+      }
+      meal_logs: {
+        Row: {
+          created_at: string | null
+          date: string
+          food_items: Json
+          hunger_after: number | null
+          hunger_before: number | null
+          id: string
+          meal_location: string | null
+          meal_source: string | null
+          meal_time: string | null
+          meal_type: string | null
+          notes: string | null
+          photo_url: string | null
+          satisfaction_rating: number | null
+          total_calories: number | null
+          total_carbs_g: number | null
+          total_fat_g: number | null
+          total_fiber_g: number | null
+          total_protein_g: number | null
+          total_sodium_mg: number | null
+          total_sugar_g: number | null
+          user_id: string | null
+        }
+        Insert: {
+          created_at?: string | null
+          date: string
+          food_items: Json
+          hunger_after?: number | null
+          hunger_before?: number | null
+          id?: string
+          meal_location?: string | null
+          meal_source?: string | null
+          meal_time?: string | null
+          meal_type?: string | null
+          notes?: string | null
+          photo_url?: string | null
+          satisfaction_rating?: number | null
+          total_calories?: number | null
+          total_carbs_g?: number | null
+          total_fat_g?: number | null
+          total_fiber_g?: number | null
+          total_protein_g?: number | null
+          total_sodium_mg?: number | null
+          total_sugar_g?: number | null
+          user_id?: string | null
+        }
+        Update: {
+          created_at?: string | null
+          date?: string
+          food_items?: Json
+          hunger_after?: number | null
+          hunger_before?: number | null
+          id?: string
+          meal_location?: string | null
+          meal_source?: string | null
+          meal_time?: string | null
+          meal_type?: string | null
+          notes?: string | null
+          photo_url?: string | null
+          satisfaction_rating?: number | null
+          total_calories?: number | null
+          total_carbs_g?: number | null
+          total_fat_g?: number | null
+          total_fiber_g?: number | null
+          total_protein_g?: number | null
+          total_sodium_mg?: number | null
+          total_sugar_g?: number | null
+          user_id?: string | null
         }
         Relationships: []
       }
@@ -1341,6 +1622,78 @@ export type Database = {
         }
         Relationships: []
       }
+      recovery_data: {
+        Row: {
+          alcohol_consumed: boolean | null
+          body_temperature: number | null
+          caffeine_intake: number | null
+          created_at: string | null
+          date: string
+          energy_level: number | null
+          hrv_score: number | null
+          hydration_level: number | null
+          id: string
+          mood: number | null
+          muscle_soreness: number | null
+          notes: string | null
+          nutrition_quality: number | null
+          resting_heart_rate: number | null
+          sleep_duration_hours: number | null
+          sleep_interruptions: number | null
+          sleep_onset_time: string | null
+          sleep_quality: number | null
+          stress_level: number | null
+          user_id: string | null
+          wake_time: string | null
+        }
+        Insert: {
+          alcohol_consumed?: boolean | null
+          body_temperature?: number | null
+          caffeine_intake?: number | null
+          created_at?: string | null
+          date: string
+          energy_level?: number | null
+          hrv_score?: number | null
+          hydration_level?: number | null
+          id?: string
+          mood?: number | null
+          muscle_soreness?: number | null
+          notes?: string | null
+          nutrition_quality?: number | null
+          resting_heart_rate?: number | null
+          sleep_duration_hours?: number | null
+          sleep_interruptions?: number | null
+          sleep_onset_time?: string | null
+          sleep_quality?: number | null
+          stress_level?: number | null
+          user_id?: string | null
+          wake_time?: string | null
+        }
+        Update: {
+          alcohol_consumed?: boolean | null
+          body_temperature?: number | null
+          caffeine_intake?: number | null
+          created_at?: string | null
+          date?: string
+          energy_level?: number | null
+          hrv_score?: number | null
+          hydration_level?: number | null
+          id?: string
+          mood?: number | null
+          muscle_soreness?: number | null
+          notes?: string | null
+          nutrition_quality?: number | null
+          resting_heart_rate?: number | null
+          sleep_duration_hours?: number | null
+          sleep_interruptions?: number | null
+          sleep_onset_time?: string | null
+          sleep_quality?: number | null
+          stress_level?: number | null
+          user_id?: string | null
+          wake_time?: string | null
+        }
+        Relationships: []
+      }
       sep_activity_types: {
         Row: {
           base_points: number
@@ -1479,6 +1832,33 @@ export type Database = {
             referencedColumns: ["id"]
           },
         ]
+      }
+      social_connections: {
+        Row: {
+          connection_type: string | null
+          created_at: string | null
+          follower_id: string | null
+          following_id: string | null
+          id: string
+          status: string | null
+        }
+        Insert: {
+          connection_type?: string | null
+          created_at?: string | null
+          follower_id?: string | null
+          following_id?: string | null
+          id?: string
+          status?: string | null
+        }
+        Update: {
+          connection_type?: string | null
+          created_at?: string | null
+          follower_id?: string | null
+          following_id?: string | null
+          id?: string
+          status?: string | null
+        }
+        Relationships: []
       }
       social_posts: {
         Row: {
@@ -2008,6 +2388,48 @@ export type Database = {
             referencedColumns: ["user_id"]
           },
         ]
+      }
+      workout_shares: {
+        Row: {
+          comments_count: number | null
+          content: string | null
+          created_at: string | null
+          id: string
+          likes_count: number | null
+          media_urls: string[] | null
+          share_type: string | null
+          shares_count: number | null
+          user_id: string | null
+          visibility: string | null
+          workout_session_id: string | null
+        }
+        Insert: {
+          comments_count?: number | null
+          content?: string | null
+          created_at?: string | null
+          id?: string
+          likes_count?: number | null
+          media_urls?: string[] | null
+          share_type?: string | null
+          shares_count?: number | null
+          user_id?: string | null
+          visibility?: string | null
+          workout_session_id?: string | null
+        }
+        Update: {
+          comments_count?: number | null
+          content?: string | null
+          created_at?: string | null
+          id?: string
+          likes_count?: number | null
+          media_urls?: string[] | null
+          share_type?: string | null
+          shares_count?: number | null
+          user_id?: string | null
+          visibility?: string | null
+          workout_session_id?: string | null
+        }
+        Relationships: []
       }
       workout_templates: {
         Row: {
