@@ -10,6 +10,7 @@ import { Badge } from "@/components/ui/badge";
 import { Separator } from "@/components/ui/separator";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Progress } from "@/components/ui/progress";
+import { Slider } from "@/components/ui/slider";
 import { useToast } from "@/hooks/use-toast";
 import { useAuth } from "@/hooks/useAuth";
 import { supabase } from "@/integrations/supabase/client";
@@ -460,15 +461,26 @@ export function AIWorkoutGenerator() {
 
               <div className="grid grid-cols-2 gap-4">
                 <div>
-                  <Label htmlFor="duration">Duration (minutes)</Label>
-                  <Input
-                    id="duration"
-                    type="number"
-                    min="15"
-                    max="120"
-                    value={preferences.duration}
-                    onChange={(e) => setPreferences({...preferences, duration: parseInt(e.target.value) || 45})}
-                  />
+                  <Label htmlFor="duration">Duration: {preferences.duration} minutes</Label>
+                  <div className="space-y-2">
+                    <Slider
+                      value={[preferences.duration]}
+                      onValueChange={(value) => setPreferences(prev => ({ ...prev, duration: value[0] }))}
+                      min={25}
+                      max={90}
+                      step={5}
+                      className="w-full"
+                    />
+                    <div className="flex justify-between text-xs text-muted-foreground">
+                      <span>25</span>
+                      <span>45</span>
+                      <span>60</span>
+                      <span>90</span>
+                    </div>
+                    <p className="text-xs text-muted-foreground">
+                      Phoenix dynamically adjusts supersets based on your time
+                    </p>
+                  </div>
                 </div>
                 <div>
                   <Label htmlFor="workoutType">Workout Style</Label>

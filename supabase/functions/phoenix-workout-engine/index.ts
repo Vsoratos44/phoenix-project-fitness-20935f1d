@@ -88,8 +88,9 @@ class PhoenixWorkoutEngine {
   /**
    * Main entry point for workout generation
    */
-  async generateWorkout(userProfile: UserProfile): Promise<GeneratedWorkout> {
+  async generateWorkout(userProfile: UserProfile, targetDuration?: number): Promise<GeneratedWorkout> {
     console.log('🔥 Phoenix Workout Engine: Starting generation for user', userProfile.user_id);
+    console.log('🕒 Target duration:', targetDuration, 'minutes');
 
     // Step 1: Select optimal workout archetype
     const archetype = await this.selectWorkoutArchetype(userProfile);
@@ -99,11 +100,16 @@ class PhoenixWorkoutEngine {
     const availableExercises = await this.getFilteredExercises(userProfile);
     console.log('💪 Available exercises:', availableExercises.length);
 
-    // Step 3: Build workout blocks based on archetype
-    const workoutBlocks = await this.buildWorkoutBlocks(archetype, availableExercises, userProfile);
+    // Step 3: Build workout blocks - use dynamic if duration specified
+    const workoutBlocks = targetDuration 
+      ? await this.buildDynamicWorkoutBlocks(archetype, availableExercises, userProfile, targetDuration)
+      : await this.buildWorkoutBlocks(archetype, availableExercises, userProfile);
 
     // Step 4: Calculate workout metrics
     const metrics = this.calculateWorkoutMetrics(workoutBlocks, archetype);
+    
+    // Add timing breakdown for dynamic workouts
+    const timingBreakdown = targetDuration ? this.generateTimingBreakdown(workoutBlocks) : undefined;
 
     // Step 5: Generate empathetic coach notes
     const coachNotes = await this.generateCoachNotes(archetype, userProfile, workoutBlocks);
@@ -111,10 +117,13 @@ class PhoenixWorkoutEngine {
     const workout: GeneratedWorkout = {
       id: `phoenix_workout_${Date.now()}`,
       name: archetype.name,
-      description: archetype.description,
+      description: `${archetype.description}${targetDuration ? ` - Dynamically scaled for ${targetDuration} minutes` : ''}`,
       archetype_id: archetype.id,
       blocks: workoutBlocks,
       coachNotes,
+      timing_breakdown: timingBreakdown,
+      target_duration_minutes: targetDuration,
+      superset_count: timingBreakdown?.total_supersets,
       ...metrics
     };
 
@@ -201,7 +210,39 @@ class PhoenixWorkoutEngine {
   }
 
   /**
-   * Builds workout blocks based on archetype structure
+   * Builds dynamic workout blocks scaled to target duration
+   */
+  private async buildDynamicWorkoutBlocks(archetype: any, exercises: Exercise[], userProfile: UserProfile, targetDuration: number = 45): Promise<WorkoutBlock[]> {
+    const blocks: WorkoutBlock[] = [];
+    let usedTime = 0;
+    
+    console.log(`🕒 Building dynamic workout for ${targetDuration} minutes`);
+
+    // Always include warm-up (5-8 minutes)
+    const warmupBlock = this.buildWarmupBlock(exercises, userProfile, 1);
+    blocks.push(warmupBlock);
+    usedTime += 7; // Average warm-up time
+
+    // Calculate available time for main work
+    const availableMainTime = targetDuration - usedTime - 5; // Reserve 5 min for cool-down
+    
+    // Dynamic superset allocation based on timing constraints
+    if (availableMainTime >= 15) {
+      const supersetBlock = this.buildDynamicSupersetBlock(exercises, userProfile, 2, availableMainTime);
+      blocks.push(supersetBlock);
+      usedTime += supersetBlock.estimated_duration || availableMainTime;
+    }
+
+    // Add mobility/cool-down
+    const cooldownBlock = this.buildCooldownBlock(exercises, userProfile, blocks.length + 1);
+    blocks.push(cooldownBlock);
+    
+    console.log(`✅ Dynamic blocks created: ${blocks.length} blocks, ~${usedTime + 5} minutes`);
+    return blocks;
+  }
+
+  /**
+   * Builds workout blocks based on archetype structure (legacy method)
    */
   private async buildWorkoutBlocks(archetype: any, exercises: Exercise[], userProfile: UserProfile): Promise<WorkoutBlock[]> {
     const blocks: WorkoutBlock[] = [];
@@ -724,6 +765,110 @@ Keep it personal, positive, and actionable. Use a warm, supportive tone.`;
 
     return null;
   }
+
+  /**
+   * Builds a dynamic superset block based on duration constraints
+   * Each superset follows 2:1 work to rest ratio with timing:
+   * - 1 minute per exercise
+   * - 3-4 exercises per superset  
+   * - Max 6.5 minutes per superset (4 exercises + rest)
+   */
+  private buildDynamicSupersetBlock(exercises: Exercise[], userProfile: UserProfile, order: number, targetDuration: number = 45): WorkoutBlock & { estimated_duration?: number; timing_notes?: string } {
+    // Filter exercises suitable for supersets
+    const supersetExercises = exercises.filter(ex => 
+      ex.exercise_type === 'strength' && 
+      ex.intensity_level !== 'low'
+    );
+
+    const selectedExercises: ExerciseWithParams[] = [];
+    let currentGroup = 'A';
+    
+    // Calculate number of supersets based on duration
+    // Each superset should take ~6.5 minutes (4 exercises × 1 min + 2.5 min rest)
+    const supersetDuration = 6.5; // minutes per superset
+    const maxSupersets = Math.floor(targetDuration / supersetDuration);
+    const exercisesPerSuperset = targetDuration < 35 ? 3 : 4; // Fewer exercises for shorter workouts
+    
+    // Create dynamic number of supersets
+    const totalSupersets = Math.min(maxSupersets, Math.floor(supersetExercises.length / exercisesPerSuperset));
+    
+    for (let supersetIndex = 0; supersetIndex < totalSupersets; supersetIndex++) {
+      const startIndex = supersetIndex * exercisesPerSuperset;
+      
+      for (let exerciseIndex = 0; exerciseIndex < exercisesPerSuperset && startIndex + exerciseIndex < supersetExercises.length; exerciseIndex++) {
+        const exercise = supersetExercises[startIndex + exerciseIndex];
+        const isLastInSuperset = exerciseIndex === exercisesPerSuperset - 1;
+        
+        // Calculate timing based on 2:1 work to rest ratio within superset
+        const workTime = 60; // 1 minute per exercise
+        const intraSetRest = 30; // 30 seconds between exercises in superset
+        const interSetRest = isLastInSuperset ? 150 : intraSetRest; // 2.5 minutes after completing superset
+        
+        selectedExercises.push({
+          ...exercise,
+          sets: 3,
+          reps_min: 10,
+          reps_max: 12,
+          rest_seconds: interSetRest,
+          superset_group: currentGroup.charCodeAt(0) - 64, // Convert A,B,C to 1,2,3
+          rpe_target: 7
+        });
+      }
+      
+      currentGroup = String.fromCharCode(currentGroup.charCodeAt(0) + 1);
+    }
+
+    return {
+      name: `Dynamic Superset Complex (${totalSupersets} supersets)`,
+      order,
+      exercises: selectedExercises,
+      estimated_duration: totalSupersets * supersetDuration,
+      timing_notes: `Each superset: ~${supersetDuration} min (2:1 work:rest ratio)`
+    };
+  }
+
+  /**
+   * Calculate actual workout duration based on blocks
+   */
+  private calculateActualWorkoutDuration(blocks: WorkoutBlock[]): number {
+    return blocks.reduce((sum, block) => {
+      const blockDuration = block.exercises.reduce((exerciseSum, ex) => {
+        const exerciseTime = (ex.sets || 1) * ((ex.duration_seconds || 60) + (ex.rest_seconds || 60));
+        return exerciseSum + exerciseTime;
+      }, 0);
+      return sum + blockDuration;
+    }, 0);
+  }
+
+  /**
+   * Generate timing breakdown for workout analysis
+   */
+  private generateTimingBreakdown(blocks: WorkoutBlock[]): any {
+    const breakdown = blocks.map(block => {
+      const supersetGroups = new Set(block.exercises.map(ex => ex.superset_group).filter(Boolean));
+      const totalExercises = block.exercises.length;
+      const estimatedMinutes = Math.round(
+        block.exercises.reduce((sum, ex) => {
+          return sum + ((ex.sets || 1) * ((ex.duration_seconds || 60) + (ex.rest_seconds || 60))) / 60;
+        }, 0)
+      );
+
+      return {
+        name: block.name,
+        exercises: totalExercises,
+        supersets: supersetGroups.size,
+        estimated_minutes: estimatedMinutes,
+        timing_strategy: supersetGroups.size > 0 ? '2:1 work:rest ratio' : 'Standard rest periods'
+      };
+    });
+
+    return {
+      blocks: breakdown,
+      total_supersets: breakdown.reduce((sum, block) => sum + block.supersets, 0),
+      total_exercises: breakdown.reduce((sum, block) => sum + block.exercises, 0),
+      total_estimated_minutes: breakdown.reduce((sum, block) => sum + block.estimated_minutes, 0)
+    };
+  }
 }
 
 serve(async (req) => {
@@ -779,9 +924,9 @@ serve(async (req) => {
             phoenix_score: latestScore?.overall_score || 75
           };
 
-          result = await engine.generateWorkout(enhancedProfile);
+          result = await engine.generateWorkout(enhancedProfile, userProfile?.preferred_workout_duration);
         } else {
-          result = await engine.generateWorkout({ ...userProfile, user_id: user.id });
+          result = await engine.generateWorkout({ ...userProfile, user_id: user.id }, userProfile?.preferred_workout_duration);
         }
         break;
 
