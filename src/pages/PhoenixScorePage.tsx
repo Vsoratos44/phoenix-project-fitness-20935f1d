@@ -83,6 +83,52 @@ export default function PhoenixScorePage() {
     return <div className="p-6">Loading Phoenix Score analysis...</div>;
   }
 
+  const generateSampleData = async () => {
+    if (!user) return;
+    
+    setLoading(true);
+    try {
+      // Insert sample biometric data
+      await supabase.from('biometric_logs').insert([
+        {
+          user_id: user.id,
+          sleep_hours: 7.5,
+          sleep_quality: 8,
+          resting_heart_rate: 65,
+          stress_level: 3,
+          energy_level: 8,
+          mood: 7,
+          recorded_at: new Date().toISOString().split('T')[0]
+        }
+      ]);
+
+      // Insert sample Phoenix score
+      await supabase.from('phoenix_scores').insert([
+        {
+          user_id: user.id,
+          date: new Date().toISOString().split('T')[0],
+          overall_score: 78,
+          sleep_score: 82,
+          recovery_score: 75,
+          training_load_score: 70,
+          nutrition_score: 85,
+          stress_score: 80,
+          hrv_score: 76,
+          recommendation: 'Good readiness for moderate to high intensity training. Your sleep and nutrition are excellent, but watch your training load recovery.',
+          suggested_intensity: 'moderate-high',
+          factors: { sleep_hours: 7.5, stress_level: 3, energy_level: 8 }
+        }
+      ]);
+
+      // Reload data
+      await loadPhoenixScores();
+    } catch (error) {
+      console.error('Error generating sample data:', error);
+    } finally {
+      setLoading(false);
+    }
+  };
+
   if (!currentScore) {
     return (
       <div className="p-6">
@@ -94,7 +140,14 @@ export default function PhoenixScorePage() {
               <p className="text-muted-foreground mb-4">
                 Your Phoenix Score will be calculated after your first few workouts and health data inputs.
               </p>
-              <Button>Complete Your First Workout</Button>
+              <div className="space-y-2">
+                <Button onClick={generateSampleData} disabled={loading}>
+                  {loading ? "Generating..." : "Generate Sample Phoenix Score"}
+                </Button>
+                <p className="text-xs text-muted-foreground">
+                  This will create sample health data and Phoenix Score for demo purposes
+                </p>
+              </div>
             </div>
           </CardContent>
         </Card>
