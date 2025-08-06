@@ -421,6 +421,221 @@ export type Database = {
           },
         ]
       }
+      enhanced_exercises: {
+        Row: {
+          animation_url: string | null
+          biomechanical_demands: Json | null
+          category: string | null
+          common_mistakes: string[] | null
+          contraindications: string[] | null
+          created_at: string | null
+          created_by: string | null
+          description: string | null
+          difficulty_level: number | null
+          energy_system_emphasis:
+            | Database["public"]["Enums"]["energy_system"][]
+            | null
+          environmental_adaptations: Json | null
+          equipment_alternatives: Json | null
+          equipment_required: string[] | null
+          form_cues: string[] | null
+          frequency_recommendations: Json | null
+          id: string
+          injury_risk_factors: string[] | null
+          instruction_steps: string[] | null
+          intensity_recommendations: Json | null
+          is_approved: boolean | null
+          mastery_criteria: Json | null
+          modality: Database["public"]["Enums"]["exercise_modality"] | null
+          modifications: Json | null
+          movement_patterns:
+            | Database["public"]["Enums"]["movement_pattern"][]
+            | null
+          movement_restrictions: string[] | null
+          name: string
+          prerequisites: Json | null
+          primary_muscles: string[] | null
+          progression_pathway: Json | null
+          regression_options: string[] | null
+          research_evidence:
+            | Database["public"]["Enums"]["evidence_level"]
+            | null
+          safety_notes: string[] | null
+          secondary_muscles: string[] | null
+          thumbnail_url: string | null
+          updated_at: string | null
+          video_url: string | null
+          volume_guidelines: Json | null
+        }
+        Insert: {
+          animation_url?: string | null
+          biomechanical_demands?: Json | null
+          category?: string | null
+          common_mistakes?: string[] | null
+          contraindications?: string[] | null
+          created_at?: string | null
+          created_by?: string | null
+          description?: string | null
+          difficulty_level?: number | null
+          energy_system_emphasis?:
+            | Database["public"]["Enums"]["energy_system"][]
+            | null
+          environmental_adaptations?: Json | null
+          equipment_alternatives?: Json | null
+          equipment_required?: string[] | null
+          form_cues?: string[] | null
+          frequency_recommendations?: Json | null
+          id?: string
+          injury_risk_factors?: string[] | null
+          instruction_steps?: string[] | null
+          intensity_recommendations?: Json | null
+          is_approved?: boolean | null
+          mastery_criteria?: Json | null
+          modality?: Database["public"]["Enums"]["exercise_modality"] | null
+          modifications?: Json | null
+          movement_patterns?:
+            | Database["public"]["Enums"]["movement_pattern"][]
+            | null
+          movement_restrictions?: string[] | null
+          name: string
+          prerequisites?: Json | null
+          primary_muscles?: string[] | null
+          progression_pathway?: Json | null
+          regression_options?: string[] | null
+          research_evidence?:
+            | Database["public"]["Enums"]["evidence_level"]
+            | null
+          safety_notes?: string[] | null
+          secondary_muscles?: string[] | null
+          thumbnail_url?: string | null
+          updated_at?: string | null
+          video_url?: string | null
+          volume_guidelines?: Json | null
+        }
+        Update: {
+          animation_url?: string | null
+          biomechanical_demands?: Json | null
+          category?: string | null
+          common_mistakes?: string[] | null
+          contraindications?: string[] | null
+          created_at?: string | null
+          created_by?: string | null
+          description?: string | null
+          difficulty_level?: number | null
+          energy_system_emphasis?:
+            | Database["public"]["Enums"]["energy_system"][]
+            | null
+          environmental_adaptations?: Json | null
+          equipment_alternatives?: Json | null
+          equipment_required?: string[] | null
+          form_cues?: string[] | null
+          frequency_recommendations?: Json | null
+          id?: string
+          injury_risk_factors?: string[] | null
+          instruction_steps?: string[] | null
+          intensity_recommendations?: Json | null
+          is_approved?: boolean | null
+          mastery_criteria?: Json | null
+          modality?: Database["public"]["Enums"]["exercise_modality"] | null
+          modifications?: Json | null
+          movement_patterns?:
+            | Database["public"]["Enums"]["movement_pattern"][]
+            | null
+          movement_restrictions?: string[] | null
+          name?: string
+          prerequisites?: Json | null
+          primary_muscles?: string[] | null
+          progression_pathway?: Json | null
+          regression_options?: string[] | null
+          research_evidence?:
+            | Database["public"]["Enums"]["evidence_level"]
+            | null
+          safety_notes?: string[] | null
+          secondary_muscles?: string[] | null
+          thumbnail_url?: string | null
+          updated_at?: string | null
+          video_url?: string | null
+          volume_guidelines?: Json | null
+        }
+        Relationships: []
+      }
+      enhanced_performance_logs: {
+        Row: {
+          average_rpe: number | null
+          completion_rate: number | null
+          created_at: string | null
+          duration_seconds: number | null
+          exercise_id: string | null
+          form_score: number | null
+          id: string
+          load_used_kg: number | null
+          mastery_achieved: boolean | null
+          movement_quality_score: number | null
+          performance_trend: string | null
+          progression_level: number | null
+          progression_notes: string | null
+          progressive_overload_applied: boolean | null
+          range_of_motion_score: number | null
+          reps_completed: number[] | null
+          rpe_scores: number[] | null
+          sets_completed: number | null
+          user_id: string
+          workout_session_id: string | null
+        }
+        Insert: {
+          average_rpe?: number | null
+          completion_rate?: number | null
+          created_at?: string | null
+          duration_seconds?: number | null
+          exercise_id?: string | null
+          form_score?: number | null
+          id?: string
+          load_used_kg?: number | null
+          mastery_achieved?: boolean | null
+          movement_quality_score?: number | null
+          performance_trend?: string | null
+          progression_level?: number | null
+          progression_notes?: string | null
+          progressive_overload_applied?: boolean | null
+          range_of_motion_score?: number | null
+          reps_completed?: number[] | null
+          rpe_scores?: number[] | null
+          sets_completed?: number | null
+          user_id: string
+          workout_session_id?: string | null
+        }
+        Update: {
+          average_rpe?: number | null
+          completion_rate?: number | null
+          created_at?: string | null
+          duration_seconds?: number | null
+          exercise_id?: string | null
+          form_score?: number | null
+          id?: string
+          load_used_kg?: number | null
+          mastery_achieved?: boolean | null
+          movement_quality_score?: number | null
+          performance_trend?: string | null
+          progression_level?: number | null
+          progression_notes?: string | null
+          progressive_overload_applied?: boolean | null
+          range_of_motion_score?: number | null
+          reps_completed?: number[] | null
+          rpe_scores?: number[] | null
+          sets_completed?: number | null
+          user_id?: string
+          workout_session_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "enhanced_performance_logs_exercise_id_fkey"
+            columns: ["exercise_id"]
+            isOneToOne: false
+            referencedRelation: "enhanced_exercises"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       enhanced_profiles: {
         Row: {
           age: number | null
@@ -909,6 +1124,114 @@ export type Database = {
         }
         Relationships: []
       }
+      exercise_progressions: {
+        Row: {
+          created_at: string | null
+          exercise_id: string | null
+          id: string
+          mastery_requirements: Json | null
+          mastery_time_weeks: number | null
+          prerequisite_exercise_id: string | null
+          progression_level: number
+          target_volume: Json | null
+        }
+        Insert: {
+          created_at?: string | null
+          exercise_id?: string | null
+          id?: string
+          mastery_requirements?: Json | null
+          mastery_time_weeks?: number | null
+          prerequisite_exercise_id?: string | null
+          progression_level: number
+          target_volume?: Json | null
+        }
+        Update: {
+          created_at?: string | null
+          exercise_id?: string | null
+          id?: string
+          mastery_requirements?: Json | null
+          mastery_time_weeks?: number | null
+          prerequisite_exercise_id?: string | null
+          progression_level?: number
+          target_volume?: Json | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "exercise_progressions_exercise_id_fkey"
+            columns: ["exercise_id"]
+            isOneToOne: false
+            referencedRelation: "enhanced_exercises"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "exercise_progressions_prerequisite_exercise_id_fkey"
+            columns: ["prerequisite_exercise_id"]
+            isOneToOne: false
+            referencedRelation: "enhanced_exercises"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      exercise_templates: {
+        Row: {
+          contraindicated_conditions: string[] | null
+          created_at: string | null
+          created_by: string | null
+          description: string | null
+          difficulty_level: number | null
+          equipment_requirements: string[] | null
+          exercise_sequence: Json
+          id: string
+          is_approved: boolean | null
+          medical_clearance_required: boolean | null
+          name: string
+          periodization_phase: string | null
+          recommended_for_conditions: string[] | null
+          target_adaptations: string[] | null
+          target_goals: string[] | null
+          total_duration_minutes: number | null
+          updated_at: string | null
+        }
+        Insert: {
+          contraindicated_conditions?: string[] | null
+          created_at?: string | null
+          created_by?: string | null
+          description?: string | null
+          difficulty_level?: number | null
+          equipment_requirements?: string[] | null
+          exercise_sequence: Json
+          id?: string
+          is_approved?: boolean | null
+          medical_clearance_required?: boolean | null
+          name: string
+          periodization_phase?: string | null
+          recommended_for_conditions?: string[] | null
+          target_adaptations?: string[] | null
+          target_goals?: string[] | null
+          total_duration_minutes?: number | null
+          updated_at?: string | null
+        }
+        Update: {
+          contraindicated_conditions?: string[] | null
+          created_at?: string | null
+          created_by?: string | null
+          description?: string | null
+          difficulty_level?: number | null
+          equipment_requirements?: string[] | null
+          exercise_sequence?: Json
+          id?: string
+          is_approved?: boolean | null
+          medical_clearance_required?: boolean | null
+          name?: string
+          periodization_phase?: string | null
+          recommended_for_conditions?: string[] | null
+          target_adaptations?: string[] | null
+          target_goals?: string[] | null
+          total_duration_minutes?: number | null
+          updated_at?: string | null
+        }
+        Relationships: []
+      }
       exercises: {
         Row: {
           animation_url: string | null
@@ -1342,6 +1665,53 @@ export type Database = {
           user_id?: string | null
         }
         Relationships: []
+      }
+      medical_exercise_compatibility: {
+        Row: {
+          alternative_exercises: string[] | null
+          compatibility_level: Database["public"]["Enums"]["compatibility_level"]
+          created_at: string | null
+          evidence_level: Database["public"]["Enums"]["evidence_level"] | null
+          exercise_id: string | null
+          id: string
+          medical_condition: string
+          medical_reasoning: string | null
+          required_modifications: Json | null
+          updated_at: string | null
+        }
+        Insert: {
+          alternative_exercises?: string[] | null
+          compatibility_level: Database["public"]["Enums"]["compatibility_level"]
+          created_at?: string | null
+          evidence_level?: Database["public"]["Enums"]["evidence_level"] | null
+          exercise_id?: string | null
+          id?: string
+          medical_condition: string
+          medical_reasoning?: string | null
+          required_modifications?: Json | null
+          updated_at?: string | null
+        }
+        Update: {
+          alternative_exercises?: string[] | null
+          compatibility_level?: Database["public"]["Enums"]["compatibility_level"]
+          created_at?: string | null
+          evidence_level?: Database["public"]["Enums"]["evidence_level"] | null
+          exercise_id?: string | null
+          id?: string
+          medical_condition?: string
+          medical_reasoning?: string | null
+          required_modifications?: Json | null
+          updated_at?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "medical_exercise_compatibility_exercise_id_fkey"
+            columns: ["exercise_id"]
+            isOneToOne: false
+            referencedRelation: "enhanced_exercises"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       movement_restrictions: {
         Row: {
@@ -2441,6 +2811,59 @@ export type Database = {
           },
         ]
       }
+      user_exercise_mastery: {
+        Row: {
+          best_performance: Json | null
+          consistency_score: number | null
+          created_at: string | null
+          current_progression_level: number | null
+          exercise_id: string | null
+          id: string
+          mastery_achieved: boolean | null
+          mastery_date: string | null
+          progression_history: Json | null
+          technique_score: number | null
+          updated_at: string | null
+          user_id: string
+        }
+        Insert: {
+          best_performance?: Json | null
+          consistency_score?: number | null
+          created_at?: string | null
+          current_progression_level?: number | null
+          exercise_id?: string | null
+          id?: string
+          mastery_achieved?: boolean | null
+          mastery_date?: string | null
+          progression_history?: Json | null
+          technique_score?: number | null
+          updated_at?: string | null
+          user_id: string
+        }
+        Update: {
+          best_performance?: Json | null
+          consistency_score?: number | null
+          created_at?: string | null
+          current_progression_level?: number | null
+          exercise_id?: string | null
+          id?: string
+          mastery_achieved?: boolean | null
+          mastery_date?: string | null
+          progression_history?: Json | null
+          technique_score?: number | null
+          updated_at?: string | null
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "user_exercise_mastery_exercise_id_fkey"
+            columns: ["exercise_id"]
+            isOneToOne: false
+            referencedRelation: "enhanced_exercises"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       user_follows: {
         Row: {
           created_at: string
@@ -3077,7 +3500,37 @@ export type Database = {
       [_ in never]: never
     }
     Enums: {
-      [_ in never]: never
+      compatibility_level:
+        | "safe"
+        | "caution"
+        | "modify_required"
+        | "contraindicated"
+      energy_system: "atp_cp" | "glycolytic" | "aerobic"
+      evidence_level: "high" | "moderate" | "low" | "expert_opinion"
+      exercise_modality:
+        | "bodyweight"
+        | "free_weights"
+        | "kettlebell"
+        | "suspension"
+        | "resistance_bands"
+        | "medicine_ball"
+        | "plyometric"
+        | "cardiovascular"
+        | "flexibility"
+        | "rehabilitation"
+      movement_pattern:
+        | "squat"
+        | "hinge"
+        | "lunge"
+        | "push_horizontal"
+        | "push_vertical"
+        | "pull_horizontal"
+        | "pull_vertical"
+        | "carry"
+        | "rotation"
+        | "anti_extension"
+        | "anti_rotation"
+        | "anti_lateral_flexion"
     }
     CompositeTypes: {
       [_ in never]: never
@@ -3204,6 +3657,41 @@ export type CompositeTypes<
 
 export const Constants = {
   public: {
-    Enums: {},
+    Enums: {
+      compatibility_level: [
+        "safe",
+        "caution",
+        "modify_required",
+        "contraindicated",
+      ],
+      energy_system: ["atp_cp", "glycolytic", "aerobic"],
+      evidence_level: ["high", "moderate", "low", "expert_opinion"],
+      exercise_modality: [
+        "bodyweight",
+        "free_weights",
+        "kettlebell",
+        "suspension",
+        "resistance_bands",
+        "medicine_ball",
+        "plyometric",
+        "cardiovascular",
+        "flexibility",
+        "rehabilitation",
+      ],
+      movement_pattern: [
+        "squat",
+        "hinge",
+        "lunge",
+        "push_horizontal",
+        "push_vertical",
+        "pull_horizontal",
+        "pull_vertical",
+        "carry",
+        "rotation",
+        "anti_extension",
+        "anti_rotation",
+        "anti_lateral_flexion",
+      ],
+    },
   },
 } as const
