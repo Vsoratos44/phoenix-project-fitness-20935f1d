@@ -1,5 +1,5 @@
-import WorkoutSession from "@/components/workout/WorkoutSession";
+import EnhancedWorkoutSession from "@/components/workout/EnhancedWorkoutSession";
 
 export default function WorkoutSessionPage() {
-  return <WorkoutSession />;
+  return <EnhancedWorkoutSession />;
 }

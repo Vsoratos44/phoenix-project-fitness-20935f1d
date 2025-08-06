@@ -31,6 +31,7 @@ import {
   Users,
   Utensils,
   Trophy,
+  Watch,
   Zap,
   PlayCircle,
   Timer,
