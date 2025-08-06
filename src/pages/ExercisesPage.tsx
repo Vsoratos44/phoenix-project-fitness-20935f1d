@@ -15,6 +15,7 @@ import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { WorkoutTemplates } from "@/components/workout/WorkoutTemplates";
+import EnhancedExerciseBrowser from "@/components/enhanced/EnhancedExerciseBrowser";
 import {
   Search,
   Play,
@@ -131,9 +132,10 @@ export default function ExercisesPage() {
       </div>
 
       <Tabs defaultValue="templates" className="space-y-6">
-        <TabsList className="grid w-full grid-cols-3">
+        <TabsList className="grid w-full grid-cols-4">
           <TabsTrigger value="templates">Workout Programs</TabsTrigger>
-          <TabsTrigger value="browse">Exercise Library</TabsTrigger>
+          <TabsTrigger value="enhanced">Enhanced Library</TabsTrigger>
+          <TabsTrigger value="browse">Basic Library</TabsTrigger>
           <TabsTrigger value="categories">Categories</TabsTrigger>
         </TabsList>
 
@@ -141,39 +143,9 @@ export default function ExercisesPage() {
           <WorkoutTemplates />
         </TabsContent>
 
-      {/* Search Bar */}
-      <Card>
-        <CardContent className="p-6">
-          <div className="relative">
-            <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-            <Input
-              placeholder="Search exercises, muscle groups, or equipment..."
-              className="pl-10"
-              value={searchTerm}
-              onChange={(e) => setSearchTerm(e.target.value)}
-            />
-          </div>
-        </CardContent>
-      </Card>
-
-      {/* Exercise Categories */}
-      <div className="grid grid-cols-2 md:grid-cols-5 gap-4">
-        {exerciseCategories.map((category) => (
-          <Card 
-            key={category.name} 
-            className="hover:shadow-md transition-shadow cursor-pointer"
-            onClick={() => setSearchTerm(category.name.toLowerCase())}
-          >
-            <CardContent className="p-4 text-center">
-              <div className={`h-12 w-12 rounded-full ${category.color} flex items-center justify-center mx-auto mb-3`}>
-                <category.icon className="h-6 w-6 text-white" />
-              </div>
-              <h3 className="font-semibold mb-1">{category.name}</h3>
-              <p className="text-sm text-muted-foreground">{category.count} exercises</p>
-            </CardContent>
-          </Card>
-        ))}
-      </div>
+        <TabsContent value="enhanced">
+          <EnhancedExerciseBrowser />
+        </TabsContent>
 
         <TabsContent value="browse" className="space-y-6">
           {/* Search Bar */}

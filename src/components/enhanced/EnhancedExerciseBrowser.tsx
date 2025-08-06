@@ -4,13 +4,13 @@ import { Badge } from '@/components/ui/badge';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
 import { Alert, AlertDescription } from '@/components/ui/alert';
-import { EnhancedExerciseLibraryService } from '@/services/EnhancedExerciseLibraryService';
+import { EnhancedExerciseLibraryService, type EnhancedExercise } from '@/services/EnhancedExerciseLibraryService';
 import { Shield, TrendingUp, Clock, AlertTriangle, CheckCircle, XCircle } from 'lucide-react';
 
 const exerciseService = new EnhancedExerciseLibraryService();
 
 export default function EnhancedExerciseBrowser() {
-  const [exercises, setExercises] = useState([]);
+  const [exercises, setExercises] = useState<EnhancedExercise[]>([]);
   const [loading, setLoading] = useState(true);
   const [searchTerm, setSearchTerm] = useState('');
   const [selectedFilters, setSelectedFilters] = useState({
@@ -71,7 +71,7 @@ export default function EnhancedExerciseBrowser() {
     }
   };
 
-  const renderSafetyIndicators = (exercise: any) => {
+  const renderSafetyIndicators = (exercise: EnhancedExercise) => {
     const hasContraindications = exercise.contraindications && exercise.contraindications.length > 0;
     const hasInjuryRisks = exercise.injury_risk_factors && exercise.injury_risk_factors.length > 0;
     
@@ -99,7 +99,7 @@ export default function EnhancedExerciseBrowser() {
     );
   };
 
-  const renderProgressionInfo = (exercise: any) => {
+  const renderProgressionInfo = (exercise: EnhancedExercise) => {
     const hasProgression = exercise.progression_pathway && exercise.progression_pathway.length > 0;
     const hasMastery = exercise.mastery_criteria && Object.keys(exercise.mastery_criteria).length > 0;
     
@@ -111,14 +111,14 @@ export default function EnhancedExerciseBrowser() {
           <TrendingUp className="w-4 h-4" />
           <span className="font-medium">Progressive System Available</span>
         </div>
-        {hasProgression && (
+        {hasProgression && Array.isArray(exercise.progression_pathway) && (
           <p className="text-xs text-blue-600 mt-1">
             {exercise.progression_pathway.length} progression levels
           </p>
         )}
-        {hasMastery && exercise.mastery_criteria.minimum_reps && (
+        {hasMastery && exercise.mastery_criteria && typeof exercise.mastery_criteria === 'object' && 'minimum_reps' in exercise.mastery_criteria && (
           <p className="text-xs text-blue-600">
-            Mastery: {exercise.mastery_criteria.minimum_reps} reps
+            Mastery: {(exercise.mastery_criteria as any).minimum_reps} reps
           </p>
         )}
       </div>
