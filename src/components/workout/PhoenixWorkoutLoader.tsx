@@ -27,9 +27,15 @@ export default function PhoenixWorkoutLoader({ onExit }: PhoenixWorkoutLoaderPro
   }, [user]);
 
   const checkForActiveWorkout = async () => {
-    if (!user) return;
+    if (!user) {
+      console.log('No user found, setting to no-workout');
+      setLoadingState('no-workout');
+      return;
+    }
 
     try {
+      console.log('Checking for active workout for user:', user.id);
+      
       // Check for any recent AI-generated workouts
       const { data: recentWorkouts, error } = await supabase
         .from('ai_workout_generations')
@@ -38,6 +44,14 @@ export default function PhoenixWorkoutLoader({ onExit }: PhoenixWorkoutLoaderPro
         .order('created_at', { ascending: false })
         .limit(1)
         .maybeSingle();
+
+      if (error) {
+        console.error('Database error:', error);
+        setLoadingState('no-workout');
+        return;
+      }
+
+      console.log('Recent workout data:', recentWorkouts);
 
       if (recentWorkouts && recentWorkouts.generated_workout) {
         // Use the most recent AI-generated workout
@@ -50,6 +64,7 @@ export default function PhoenixWorkoutLoader({ onExit }: PhoenixWorkoutLoaderPro
         });
       } else {
         // No workout available, need to generate one
+        console.log('No recent workout found, setting to no-workout');
         setLoadingState('no-workout');
       }
     } catch (error) {
