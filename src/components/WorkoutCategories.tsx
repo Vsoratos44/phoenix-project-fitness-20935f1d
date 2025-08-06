@@ -1,6 +1,7 @@
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { Dumbbell, Heart, Zap, Waves } from "lucide-react";
+import { useNavigate } from "react-router-dom";
 
 const categories = [
   {
@@ -34,6 +35,8 @@ const categories = [
 ];
 
 const WorkoutCategories = () => {
+  const navigate = useNavigate();
+
   return (
     <section className="py-24 px-6 lg:px-8">
       <div className="max-w-7xl mx-auto">
@@ -83,6 +86,7 @@ const WorkoutCategories = () => {
                   <Button 
                     variant="ghost" 
                     className="w-full group-hover:bg-primary/10 group-hover:text-primary transition-all duration-300"
+                    onClick={() => navigate('/workouts')}
                   >
                     Start Training
                   </Button>
@@ -101,7 +105,11 @@ const WorkoutCategories = () => {
             <p className="text-muted-foreground mb-6">
               Take our 2-minute fitness assessment and get a personalized workout plan
             </p>
-            <Button variant="hero" size="lg">
+            <Button 
+              variant="hero" 
+              size="lg"
+              onClick={() => navigate('/onboarding')}
+            >
               Take Assessment
             </Button>
           </div>

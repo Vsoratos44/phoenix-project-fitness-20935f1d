@@ -1,8 +1,11 @@
 import { Button } from "@/components/ui/button";
 import { Play, Star, Users } from "lucide-react";
+import { useNavigate } from "react-router-dom";
 import heroImage from "@/assets/hero-fitness.jpg";
 
 const Hero = () => {
+  const navigate = useNavigate();
+
   return (
     <section className="relative min-h-screen flex items-center justify-center overflow-hidden">
       {/* Background Image with Overlay */}
@@ -44,6 +47,7 @@ const Hero = () => {
                 variant="hero" 
                 size="lg"
                 className="group"
+                onClick={() => navigate('/auth')}
               >
                 Start Your Journey
                 <Play className="w-5 h-5 group-hover:translate-x-1 transition-transform" />
@@ -53,6 +57,7 @@ const Hero = () => {
                 variant="outline" 
                 size="lg"
                 className="border-primary/30 hover:border-primary hover:bg-primary/10"
+                onClick={() => navigate('/ai-workouts')}
               >
                 Watch Demo
               </Button>

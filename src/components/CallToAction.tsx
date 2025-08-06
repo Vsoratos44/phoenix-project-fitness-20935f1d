@@ -1,6 +1,7 @@
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { CheckCircle, Zap, Smartphone, Trophy } from "lucide-react";
+import { useNavigate } from "react-router-dom";
 
 const features = [
   {
@@ -21,6 +22,8 @@ const features = [
 ];
 
 const CallToAction = () => {
+  const navigate = useNavigate();
+
   return (
     <section className="py-24 px-6 lg:px-8 relative overflow-hidden">
       {/* Electric Background Effects */}
@@ -109,10 +112,20 @@ const CallToAction = () => {
                 </div>
 
                 <div className="space-y-3">
-                  <Button variant="success" size="lg" className="w-full">
+                  <Button 
+                    variant="success" 
+                    size="lg" 
+                    className="w-full"
+                    onClick={() => navigate('/auth')}
+                  >
                     Start Free Trial
                   </Button>
-                  <Button variant="electric" size="lg" className="w-full">
+                  <Button 
+                    variant="electric" 
+                    size="lg" 
+                    className="w-full"
+                    onClick={() => navigate('/subscription')}
+                  >
                     View Pricing Plans
                   </Button>
                 </div>
