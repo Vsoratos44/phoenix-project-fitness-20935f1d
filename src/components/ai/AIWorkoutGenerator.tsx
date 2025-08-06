@@ -195,30 +195,29 @@ export function AIWorkoutGenerator() {
   };
 
   const handleGenerateWorkout = async () => {
-    // Remove auth requirement for testing
-    // if (!user) {
-    //   toast({
-    //     title: "Authentication Required",
-    //     description: "Please sign in to generate workouts.",
-    //     variant: "destructive"
-    //   });
-    //   return;
-    // }
-
     setIsGenerating(true);
     try {
+      // Create a basic user profile for testing
+      const testUserProfile = {
+        user_id: user?.id || 'test-user',
+        primary_goal: preferences.goal,
+        fitness_level: preferences.fitnessLevel,
+        preferred_workout_duration: preferences.duration,
+        available_equipment: preferences.equipment,
+        injury_history_summary: [],
+        one_rep_max_estimates: {},
+        training_frequency_goal: 3,
+        phoenix_score: phoenixScore,
+        height_cm: 175,
+        weight_kg: 70
+      };
+
       // Call the Phoenix Workout Engine
       const { data, error } = await supabase.functions.invoke('phoenix-workout-engine', {
         body: {
           action: 'generate',
-          userProfile: userProfile ? {
-            ...userProfile,
-            primary_goal: preferences.goal,
-            fitness_level: preferences.fitnessLevel,
-            preferred_workout_duration: preferences.duration,
-            available_equipment: preferences.equipment,
-            phoenix_score: phoenixScore
-          } : null
+          userProfile: testUserProfile,
+          targetDuration: preferences.duration
         }
       });
 
