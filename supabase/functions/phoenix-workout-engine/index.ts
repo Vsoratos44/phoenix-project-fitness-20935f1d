@@ -86,6 +86,88 @@ class PhoenixWorkoutEngine {
   constructor(private supabase: any) {}
 
   /**
+   * Creates default exercises when database is empty
+   */
+  private getDefaultExercises(): Exercise[] {
+    return [
+      {
+        id: 'default-pushup',
+        name: 'Push-ups',
+        description: 'Classic bodyweight chest exercise',
+        exercise_type: 'strength',
+        exercise_type_detailed: 'compound',
+        intensity_level: 'moderate',
+        muscle_group_primary: 'chest',
+        muscle_group_secondary: ['shoulders', 'triceps'],
+        equipment_required: [],
+        difficulty_level: 'beginner',
+        instructions: ['Start in plank position', 'Lower chest to ground', 'Push back up']
+      },
+      {
+        id: 'default-squat',
+        name: 'Bodyweight Squats',
+        description: 'Fundamental lower body movement',
+        exercise_type: 'strength',
+        exercise_type_detailed: 'compound',
+        intensity_level: 'moderate',
+        muscle_group_primary: 'legs',
+        muscle_group_secondary: ['glutes'],
+        equipment_required: [],
+        difficulty_level: 'beginner',
+        instructions: ['Stand with feet shoulder-width apart', 'Lower into squat position', 'Return to standing']
+      },
+      {
+        id: 'default-plank',
+        name: 'Plank Hold',
+        description: 'Core stability exercise',
+        exercise_type: 'strength',
+        exercise_type_detailed: 'isometric',
+        intensity_level: 'moderate',
+        muscle_group_primary: 'core',
+        equipment_required: [],
+        difficulty_level: 'beginner',
+        instructions: ['Hold plank position', 'Keep body straight', 'Engage core muscles']
+      },
+      {
+        id: 'default-jumping-jacks',
+        name: 'Jumping Jacks',
+        description: 'Cardio warm-up movement',
+        exercise_type: 'cardio',
+        exercise_type_detailed: 'dynamic',
+        intensity_level: 'low',
+        muscle_group_primary: 'full_body',
+        equipment_required: [],
+        difficulty_level: 'beginner',
+        instructions: ['Jump feet apart while raising arms', 'Jump back to starting position']
+      },
+      {
+        id: 'default-arm-circles',
+        name: 'Arm Circles',
+        description: 'Dynamic shoulder warm-up',
+        exercise_type: 'stretching',
+        exercise_type_detailed: 'dynamic',
+        intensity_level: 'low',
+        muscle_group_primary: 'shoulders',
+        equipment_required: [],
+        difficulty_level: 'beginner',
+        instructions: ['Extend arms to sides', 'Make small circles', 'Gradually increase size']
+      },
+      {
+        id: 'default-child-pose',
+        name: 'Child\'s Pose',
+        description: 'Relaxing stretch for recovery',
+        exercise_type: 'stretching',
+        exercise_type_detailed: 'static',
+        intensity_level: 'low',
+        muscle_group_primary: 'back',
+        equipment_required: [],
+        difficulty_level: 'beginner',
+        instructions: ['Kneel and sit back on heels', 'Reach arms forward', 'Hold and breathe']
+      }
+    ];
+  }
+
+  /**
    * Main entry point for workout generation
    */
   async generateWorkout(userProfile: UserProfile, targetDuration?: number): Promise<GeneratedWorkout> {
@@ -182,29 +264,47 @@ class PhoenixWorkoutEngine {
    * Gets exercises filtered by equipment and injury contraindications
    */
   private async getFilteredExercises(userProfile: UserProfile): Promise<Exercise[]> {
+    console.log('🔍 Fetching exercises for user profile:', userProfile.user_id);
+    
     const { data: exercises, error } = await this.supabase
       .from('exercises')
       .select('*')
       .eq('is_approved', true);
 
-    if (error || !exercises) {
+    console.log('📊 Raw exercise count:', exercises?.length || 0);
+    if (error) {
       console.error('❌ Error fetching exercises:', error);
       return [];
+    }
+
+    if (!exercises || exercises.length === 0) {
+      console.warn('⚠️ No approved exercises found in database');
+      // Return some default exercises for testing
+      return this.getDefaultExercises();
     }
 
     // Filter by available equipment
     const equipmentFiltered = exercises.filter(exercise => {
       const required = exercise.equipment_required || [];
-      return required.length === 0 || required.some(eq => userProfile.available_equipment.includes(eq));
+      const hasEquipment = required.length === 0 || required.some(eq => userProfile.available_equipment.includes(eq));
+      return hasEquipment;
     });
+    console.log('🏋️ After equipment filter:', equipmentFiltered.length);
 
     // Filter out contraindicated exercises based on injury history
     const injuryFiltered = equipmentFiltered.filter(exercise => {
       const contraindications = exercise.injury_contraindications || [];
       const userInjuries = userProfile.injury_history_summary.map((injury: any) => injury.type);
       
-      return !contraindications.some(contra => userInjuries.includes(contra));
+      const isContraindicated = contraindications.some(contra => userInjuries.includes(contra));
+      return !isContraindicated;
     });
+    console.log('🩹 After injury filter:', injuryFiltered.length);
+
+    if (injuryFiltered.length === 0) {
+      console.warn('⚠️ No exercises remain after filtering, falling back to defaults');
+      return this.getDefaultExercises();
+    }
 
     return injuryFiltered;
   }
