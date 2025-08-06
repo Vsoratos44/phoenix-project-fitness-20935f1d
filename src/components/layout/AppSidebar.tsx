@@ -84,6 +84,7 @@ const navigationSections = [
     items: [
       { title: "Community", url: "/community", icon: Users },
       { title: "Challenges", url: "/challenges", icon: Trophy },
+      { title: "Wearables", url: "/wearables", icon: Watch },
       { title: "Leaderboards", url: "/leaderboards", icon: TrendingUp },
     ]
   },

@@ -31,6 +31,7 @@ import ProgressPage from "./pages/ProgressPage";
 import { AuthProvider } from "./hooks/useAuth";
 import NotFound from "./pages/NotFound";
 import Auth from "./pages/Auth";
+import WearablesPage from "./pages/WearablesPage";
 
 const queryClient = new QueryClient();
 
@@ -60,6 +61,7 @@ const App = () => (
             <Route path="biometrics" element={<BiometricsPage />} />
             <Route path="progress" element={<ProgressPage />} />
             <Route path="community" element={<CommunityPage />} />
+            <Route path="wearables" element={<WearablesPage />} />
             <Route path="challenges" element={<ChallengesPage />} />
             <Route path="leaderboards" element={<LeaderboardsPage />} />
             <Route path="achievements" element={<AchievementsPage />} />

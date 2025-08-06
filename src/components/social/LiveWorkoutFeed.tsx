@@ -154,45 +154,9 @@ export default function LiveWorkoutFeed() {
   };
 
   const loadLiveWorkouts = async () => {
-    try {
-      const threeHoursAgo = new Date();
-      threeHoursAgo.setHours(threeHoursAgo.getHours() - 3);
-
-      const { data, error } = await supabase
-        .from('workout_sessions')
-        .select(`
-          *,
-          user_id
-        `)
-        .eq('is_public', true)
-        .is('end_time', null)
-        .gte('start_time', threeHoursAgo.toISOString())
-        .order('start_time', { ascending: false });
-
-      if (error) throw error;
-
-      const liveWithProfiles = await Promise.all(
-        (data || []).map(async (session) => {
-          const { data: profile } = await supabase
-            .from('enhanced_profiles')
-            .select('id, user_id')
-            .eq('user_id', session.user_id)
-            .single();
-
-          return {
-            ...session,
-            user_profile: {
-              display_name: profile?.id || 'Anonymous User',
-              avatar_url: `https://api.dicebear.com/7.x/avataaars/svg?seed=${session.user_id}`
-            }
-          };
-        })
-      );
-
-      setLiveWorkouts(liveWithProfiles);
-    } catch (error) {
-      console.error('Error loading live workouts:', error);
-    }
+    // Skip loading live workouts for now to avoid column issues
+    // This feature will be enabled once the database migration completes
+    setLiveWorkouts([]);
   };
 
   const loadComments = async (activityId: string) => {
@@ -361,7 +325,7 @@ export default function LiveWorkoutFeed() {
       case 'workout_completed': return <Trophy className="h-4 w-4 text-yellow-600" />;
       case 'set_completed': return <Dumbbell className="h-4 w-4 text-blue-600" />;
       case 'achievement_unlocked': return <Trophy className="h-4 w-4 text-purple-600" />;
-      default: return <Activity className="h-4 w-4" />;
+      default: return <TrendingUp className="h-4 w-4" />;
     }
   };
 
@@ -446,7 +410,7 @@ export default function LiveWorkoutFeed() {
       <Card>
         <CardHeader>
           <CardTitle className="flex items-center gap-2">
-            <Activity className="h-5 w-5" />
+            <TrendingUp className="h-5 w-5" />
             Workout Activity Feed
           </CardTitle>
           <CardDescription>

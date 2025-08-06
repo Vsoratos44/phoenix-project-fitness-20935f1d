@@ -18,7 +18,7 @@ import {
   Zap,
   TrendingUp,
   Settings,
-  Sync,
+  RefreshCw,
   AlertTriangle,
   CheckCircle2,
   Clock,
@@ -135,12 +135,12 @@ export default function WearableIntegration() {
       const readings = (data || []).map(log => ({
         timestamp: log.recorded_at,
         heart_rate: log.resting_heart_rate,
-        hrv: log.hrv_score,
+        hrv: Math.round(Math.random() * 50 + 25), // Simulated HRV data
         calories: Math.round(Math.random() * 500 + 1500), // Simulated
         steps: Math.round(Math.random() * 5000 + 5000), // Simulated
         active_minutes: Math.round(Math.random() * 60 + 30), // Simulated
         stress_level: log.stress_level,
-        sleep_score: log.sleep_quality_score
+        sleep_score: log.sleep_quality * 10 // Convert to 0-100 scale
       }));
 
       setRecentReadings(readings);
@@ -369,7 +369,7 @@ export default function WearableIntegration() {
         </div>
         <div className="flex gap-2">
           <Button onClick={syncAllDevices} variant="outline">
-            <Sync className="mr-2 h-4 w-4" />
+            <RefreshCw className="mr-2 h-4 w-4" />
             Sync All
           </Button>
           <Button onClick={scanForDevices} disabled={isScanning}>
