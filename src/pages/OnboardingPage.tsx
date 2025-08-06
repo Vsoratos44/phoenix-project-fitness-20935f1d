@@ -1,4 +1,4 @@
-import { OnboardingFlow } from "@/components/onboarding/OnboardingFlow";
+import { EnhancedOnboardingFlow } from "@/components/onboarding/EnhancedOnboardingFlow";
 import { useNavigate } from "react-router-dom";
 
 export default function OnboardingPage() {
@@ -8,5 +8,5 @@ export default function OnboardingPage() {
     navigate("/dashboard");
   };
 
-  return <OnboardingFlow onComplete={handleOnboardingComplete} />;
+  return <EnhancedOnboardingFlow onComplete={handleOnboardingComplete} />;
 }

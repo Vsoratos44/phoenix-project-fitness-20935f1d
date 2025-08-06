@@ -101,6 +101,7 @@ const navigationSections = [
     items: [
       { title: "Settings", url: "/settings", icon: Settings },
       { title: "Activity Feed", url: "/activity", icon: Activity },
+      { title: "Component Testing", url: "/component-testing", icon: Zap },
     ]
   }
 ];
