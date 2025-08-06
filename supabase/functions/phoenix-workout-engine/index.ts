@@ -732,6 +732,8 @@ class PhoenixWorkoutEngine {
       order,
       exercises: selectedExercises
     };
+  }
+
   /**
    * Builds a comprehensive dynamic superset block with intelligent exercise selection
    */
