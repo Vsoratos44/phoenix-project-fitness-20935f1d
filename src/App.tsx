@@ -34,6 +34,7 @@ import { AuthProvider } from "./hooks/useAuth";
 import NotFound from "./pages/NotFound";
 import Auth from "./pages/Auth";
 import WearablesPage from "./pages/WearablesPage";
+import { MobileLayout } from "./components/mobile/MobileLayout";
 
 const queryClient = new QueryClient();
 
@@ -46,10 +47,11 @@ const App = () => (
       disableTransitionOnChange
     >
       <AuthProvider>
-        <TooltipProvider>
-        <Toaster />
-        <Sonner />
-        <BrowserRouter>
+        <MobileLayout>
+          <TooltipProvider>
+          <Toaster />
+          <Sonner />
+          <BrowserRouter>
           <Routes>
             <Route path="/auth" element={<Auth />} />
             <Route path="/" element={<Layout />}>
@@ -87,6 +89,7 @@ const App = () => (
           </Routes>
         </BrowserRouter>
       </TooltipProvider>
+        </MobileLayout>
       </AuthProvider>
     </ThemeProvider>
   </QueryClientProvider>

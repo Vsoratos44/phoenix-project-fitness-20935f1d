@@ -35,7 +35,10 @@ import {
   Zap,
   PlayCircle,
   Timer,
-  Flame
+  Flame,
+  ChevronDown,
+  Smartphone,
+  Monitor
 } from "lucide-react";
 
 import {
@@ -50,6 +53,12 @@ import {
   SidebarTrigger,
   useSidebar,
 } from "@/components/ui/sidebar";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
 
 // Define all navigation sections and their routes
 const navigationSections = [
@@ -111,6 +120,7 @@ export function AppSidebar() {
   const location = useLocation();
   const currentPath = location.pathname;
   const collapsed = state === "collapsed";
+  const [selectedApp, setSelectedApp] = useState("web");
 
   // Helper functions for navigation state
   const isActive = (path: string) => {
@@ -131,28 +141,78 @@ export function AppSidebar() {
       className={`${collapsed ? "w-16" : "w-64"} border-r border-border/40 bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60`}
       collapsible="icon"
     >
-      {/* Header with logo and collapse trigger */}
+      {/* Header with logo and app selector */}
       <div className="flex items-center justify-between p-4 border-b border-border/40">
         {!collapsed && (
-          <div className="flex items-center gap-2">
-            <div className="h-8 w-8 rounded-lg bg-gradient-to-br from-primary to-fitness-orange flex items-center justify-center">
-              <Dumbbell className="h-4 w-4 text-primary-foreground" />
-            </div>
-            <div className="flex flex-col">
-              <span className="text-sm font-semibold">Phoenix Fitness</span>
-              <span className="text-xs text-muted-foreground">v2.1</span>
-            </div>
-          </div>
+          <DropdownMenu>
+            <DropdownMenuTrigger className="flex items-center gap-2 hover:bg-accent rounded-lg p-2 transition-colors">
+              <div className="h-8 w-8 rounded-lg bg-gradient-to-br from-primary to-fitness-orange flex items-center justify-center">
+                <Dumbbell className="h-4 w-4 text-primary-foreground" />
+              </div>
+              <div className="flex flex-col items-start">
+                <span className="text-sm font-semibold">Phoenix Fitness</span>
+                <div className="flex items-center gap-1">
+                  <span className="text-xs text-muted-foreground">
+                    {selectedApp === "web" ? "Web v2.1" : selectedApp === "ios" ? "iOS v1.0" : "Android v1.0"}
+                  </span>
+                  <ChevronDown className="h-3 w-3 text-muted-foreground" />
+                </div>
+              </div>
+            </DropdownMenuTrigger>
+            <DropdownMenuContent align="start" className="w-56">
+              <DropdownMenuItem 
+                onClick={() => setSelectedApp("web")}
+                className={selectedApp === "web" ? "bg-accent" : ""}
+              >
+                <Monitor className="h-4 w-4 mr-2" />
+                Phoenix Fitness Web v2.1
+              </DropdownMenuItem>
+              <DropdownMenuItem 
+                onClick={() => setSelectedApp("ios")}
+                className={selectedApp === "ios" ? "bg-accent" : ""}
+              >
+                <Smartphone className="h-4 w-4 mr-2" />
+                Phoenix Fitness iOS v1.0
+              </DropdownMenuItem>
+              <DropdownMenuItem 
+                onClick={() => setSelectedApp("android")}
+                className={selectedApp === "android" ? "bg-accent" : ""}
+              >
+                <Smartphone className="h-4 w-4 mr-2" />
+                Phoenix Fitness Android v1.0
+              </DropdownMenuItem>
+            </DropdownMenuContent>
+          </DropdownMenu>
         )}
         <SidebarTrigger className="h-6 w-6" />
       </div>
 
       <SidebarContent className="px-2 py-4">
+        {/* App Version Notice */}
+        {!collapsed && selectedApp !== "web" && (
+          <div className="mx-3 mb-4 p-3 bg-amber-50 border border-amber-200 rounded-lg">
+            <div className="flex items-center gap-2 mb-1">
+              <Smartphone className="h-4 w-4 text-amber-600" />
+              <span className="text-sm font-medium text-amber-800">
+                {selectedApp === "ios" ? "iOS Native" : "Android Native"} Mode
+              </span>
+            </div>
+            <p className="text-xs text-amber-700">
+              Mobile-optimized interface with native device capabilities
+            </p>
+          </div>
+        )}
+
         {navigationSections.map((section) => (
           <SidebarGroup key={section.label} className="mb-4">
             {!collapsed && (
               <SidebarGroupLabel className="px-3 text-xs font-semibold text-muted-foreground uppercase tracking-wider">
                 {section.label}
+                {selectedApp !== "web" && (
+                  <span className="ml-2 text-xs bg-primary/10 text-primary px-1.5 py-0.5 rounded">
+                    Mobile
+                  </span>
+                )}
               </SidebarGroupLabel>
             )}
             
