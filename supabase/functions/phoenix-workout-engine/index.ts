@@ -348,6 +348,9 @@ class PhoenixWorkoutEngine {
     const blocks: WorkoutBlock[] = [];
     const structure = archetype.structure_template?.blocks || ['warmup', 'strength', 'cardio', 'cooldown'];
 
+    console.log(`🏗️ Building ${structure.length} workout blocks using archetype: ${archetype.name}`);
+    console.log(`📋 Block structure: ${structure.join(' → ')}`);
+
     for (let i = 0; i < structure.length; i++) {
       const blockType = structure[i];
       let block: WorkoutBlock;
@@ -597,55 +600,111 @@ class PhoenixWorkoutEngine {
       exercises: selectedExercises
     };
   /**
-   * Builds a dynamic superset block with timing constraints
+   * Builds a comprehensive dynamic superset block with intelligent exercise selection
    */
   private buildDynamicSupersetBlock(exercises: Exercise[], userProfile: UserProfile, order: number, targetMinutes: number): WorkoutBlock {
     console.log(`🏗️ Building dynamic superset block for ${targetMinutes} minutes`);
+    console.log(`💪 Total available exercises: ${exercises.length}`);
     
+    // Filter exercises by type and difficulty
     const strengthExercises = exercises.filter(ex => 
       ex.exercise_type === 'strength' && 
+      (ex.difficulty_level === userProfile.fitness_level || 
+       (userProfile.fitness_level === 'intermediate' && ex.difficulty_level === 'beginner'))
+    );
+
+    const cardioExercises = exercises.filter(ex => 
+      ex.exercise_type === 'cardio' && 
       ex.intensity_level !== 'low'
     );
 
-    console.log('💪 Available strength exercises for supersets:', strengthExercises.length);
+    const plyoExercises = exercises.filter(ex => 
+      ex.exercise_type === 'plyometrics'
+    );
+
+    console.log(`🏋️ Strength exercises: ${strengthExercises.length}`);
+    console.log(`🏃 Cardio exercises: ${cardioExercises.length}`);
+    console.log(`🚀 Plyometric exercises: ${plyoExercises.length}`);
+
+    // Combine all suitable exercises for superset selection
+    const supersetExercises = [...strengthExercises, ...cardioExercises, ...plyoExercises];
+    
+    if (supersetExercises.length === 0) {
+      console.warn('⚠️ No suitable exercises found for supersets, using defaults');
+      return {
+        name: 'Dynamic Superset Complex (0 supersets)',
+        order,
+        exercises: [],
+        estimated_duration: targetMinutes
+      };
+    }
 
     const selectedExercises: ExerciseWithParams[] = [];
     
-    // Calculate work parameters based on time constraint
-    const workTime = 45; // seconds per exercise
-    const restTime = 30; // seconds between exercises
-    const supersetRest = 90; // seconds between supersets
+    // Calculate work parameters based on time constraint and fitness level
+    const workTime = userProfile.fitness_level === 'beginner' ? 30 : 45; // seconds per exercise
+    const restTime = userProfile.fitness_level === 'beginner' ? 45 : 30; // seconds between exercises
+    const supersetRest = userProfile.fitness_level === 'beginner' ? 120 : 90; // seconds between supersets
     
-    // Determine number of supersets and exercises per superset
-    const timePerSuperset = (workTime * 2) + restTime + supersetRest; // 2 exercises per superset
+    // Determine optimal superset structure
+    const exercisesPerSuperset = 2;
+    const timePerSuperset = (workTime * exercisesPerSuperset) + (restTime * (exercisesPerSuperset - 1)) + supersetRest;
     const targetSupersets = Math.max(1, Math.floor((targetMinutes * 60) / timePerSuperset));
-    const exercisesNeeded = targetSupersets * 2;
+    const exercisesNeeded = targetSupersets * exercisesPerSuperset;
     
     console.log(`🎯 Target: ${targetSupersets} supersets with ${exercisesNeeded} exercises`);
+    console.log(`⏱️ Work: ${workTime}s, Rest: ${restTime}s, Superset Rest: ${supersetRest}s`);
 
-    // Select exercises for supersets
-    const shuffledExercises = strengthExercises.sort(() => 0.5 - Math.random());
-    const selectedCount = Math.min(exercisesNeeded, shuffledExercises.length);
+    // Intelligent exercise selection for balanced supersets
+    const selectedCount = Math.min(exercisesNeeded, supersetExercises.length);
+    const shuffledExercises = supersetExercises.sort(() => 0.5 - Math.random());
     
+    // Create balanced supersets (alternate muscle groups when possible)
     for (let i = 0; i < selectedCount; i++) {
       const exercise = shuffledExercises[i];
-      const supersetGroup = Math.floor(i / 2) + 1;
+      const supersetGroup = Math.floor(i / exercisesPerSuperset) + 1;
+      
+      // Determine exercise parameters based on type and user level
+      let exerciseParams: Partial<ExerciseWithParams> = {
+        sets: userProfile.fitness_level === 'beginner' ? 2 : 3,
+        rest_seconds: restTime,
+        superset_group: supersetGroup,
+        rpe_target: userProfile.fitness_level === 'beginner' ? 6 : 7
+      };
+
+      // Type-specific parameters
+      if (exercise.exercise_type === 'strength') {
+        exerciseParams = {
+          ...exerciseParams,
+          reps_min: userProfile.fitness_level === 'beginner' ? 8 : 10,
+          reps_max: userProfile.fitness_level === 'beginner' ? 12 : 15,
+          rpe_target: userProfile.fitness_level === 'beginner' ? 7 : 8
+        };
+      } else if (exercise.exercise_type === 'cardio' || exercise.exercise_type === 'plyometrics') {
+        exerciseParams = {
+          ...exerciseParams,
+          duration_seconds: workTime,
+          rpe_target: userProfile.fitness_level === 'beginner' ? 8 : 9
+        };
+      }
       
       selectedExercises.push({
         ...exercise,
-        sets: 3,
-        reps_min: userProfile.fitness_level === 'beginner' ? 8 : 10,
-        reps_max: userProfile.fitness_level === 'beginner' ? 12 : 15,
-        rest_seconds: restTime,
-        superset_group: supersetGroup,
-        rpe_target: userProfile.fitness_level === 'beginner' ? 7 : 8
+        ...exerciseParams
       });
     }
 
-    console.log(`✅ Created ${selectedExercises.length} exercises in ${Math.ceil(selectedCount / 2)} supersets`);
+    console.log(`✅ Created ${selectedExercises.length} exercises in ${Math.ceil(selectedCount / exercisesPerSuperset)} supersets`);
+
+    // Log exercise breakdown by type
+    const strengthCount = selectedExercises.filter(ex => ex.exercise_type === 'strength').length;
+    const cardioCount = selectedExercises.filter(ex => ex.exercise_type === 'cardio').length;
+    const plyoCount = selectedExercises.filter(ex => ex.exercise_type === 'plyometrics').length;
+    
+    console.log(`📊 Exercise breakdown - Strength: ${strengthCount}, Cardio: ${cardioCount}, Plyo: ${plyoCount}`);
 
     return {
-      name: `Dynamic Superset Complex (${Math.ceil(selectedCount / 2)} supersets)`,
+      name: `Dynamic Superset Complex (${Math.ceil(selectedCount / exercisesPerSuperset)} supersets)`,
       order,
       exercises: selectedExercises,
       estimated_duration: targetMinutes
