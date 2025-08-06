@@ -261,11 +261,36 @@ class PhoenixWorkoutEngine {
   }
 
   /**
-   * Gets exercises filtered by equipment and injury contraindications
+   * Gets exercises filtered by equipment and injury contraindications with enhanced medical safety
    */
   private async getFilteredExercises(userProfile: UserProfile): Promise<Exercise[]> {
-    console.log('🔍 Fetching exercises for user profile:', userProfile.user_id);
+    console.log('🔍 Fetching enhanced exercises for user profile:', userProfile.user_id);
     
+    // Try enhanced exercises first
+    const { data: enhancedExercises, error: enhancedError } = await this.supabase
+      .from('enhanced_exercises')
+      .select(`
+        *,
+        medical_exercise_compatibility!inner(
+          medical_condition,
+          compatibility_level,
+          required_modifications,
+          medical_reasoning
+        )
+      `)
+      .eq('is_approved', true);
+
+    if (enhancedError) {
+      console.warn('⚠️ Enhanced exercises not available, falling back to basic:', enhancedError);
+    }
+
+    if (enhancedExercises && enhancedExercises.length > 0) {
+      console.log('✅ Using enhanced exercises with medical safety filtering');
+      return this.applyEnhancedMedicalFiltering(enhancedExercises, userProfile);
+    }
+
+    // Fallback to basic exercises
+    console.log('📊 Falling back to basic exercises');
     const { data: exercises, error } = await this.supabase
       .from('exercises')
       .select('*')
@@ -279,24 +304,132 @@ class PhoenixWorkoutEngine {
 
     if (!exercises || exercises.length === 0) {
       console.warn('⚠️ No approved exercises found in database');
-      // Return some default exercises for testing
       return this.getDefaultExercises();
     }
 
+    return this.applyBasicFiltering(exercises, userProfile);
+  }
+
+  /**
+   * Apply enhanced medical filtering with safety assessments
+   */
+  private applyEnhancedMedicalFiltering(exercises: any[], userProfile: UserProfile): Exercise[] {
+    console.log('🩺 Applying enhanced medical filtering');
+    
+    const filteredExercises = exercises.filter(exercise => {
+      // Check contraindications
+      if (exercise.contraindications && exercise.contraindications.length > 0) {
+        const userConditions = [
+          ...(userProfile.injury_history_summary?.map((injury: any) => injury.type) || []),
+          // Add any medical conditions from profile if available
+        ];
+        
+        const hasContraindication = exercise.contraindications.some((condition: string) =>
+          userConditions.includes(condition)
+        );
+        
+        if (hasContraindication) {
+          console.log(`❌ Exercise ${exercise.name} contraindicated for user conditions`);
+          return false;
+        }
+      }
+
+      // Check equipment availability
+      if (exercise.equipment_required && exercise.equipment_required.length > 0) {
+        const hasEquipment = exercise.equipment_required.every((equipment: string) =>
+          userProfile.available_equipment?.includes(equipment)
+        );
+        
+        if (!hasEquipment) {
+          console.log(`⚙️ Exercise ${exercise.name} requires unavailable equipment`);
+          return false;
+        }
+      }
+
+      // Check difficulty appropriateness
+      const userLevel = userProfile.fitness_level || 'beginner';
+      const maxDifficulty = {
+        'beginner': 2,
+        'novice': 2,
+        'intermediate': 4,
+        'advanced': 5,
+        'expert': 5
+      }[userLevel] || 2;
+
+      if (exercise.difficulty_level > maxDifficulty) {
+        console.log(`🎯 Exercise ${exercise.name} too difficult for ${userLevel} level`);
+        return false;
+      }
+
+      // Check medical compatibility from database
+      if (exercise.medical_exercise_compatibility) {
+        const hasUnsafeCompatibility = exercise.medical_exercise_compatibility.some((comp: any) =>
+          comp.compatibility_level === 'contraindicated'
+        );
+        
+        if (hasUnsafeCompatibility) {
+          console.log(`🚫 Exercise ${exercise.name} flagged as contraindicated in medical database`);
+          return false;
+        }
+      }
+
+      return true;
+    });
+
+    // Convert enhanced exercises to standard format
+    const convertedExercises = filteredExercises.map(exercise => this.convertEnhancedToStandard(exercise));
+    
+    console.log(`✅ Enhanced filtering complete: ${convertedExercises.length} safe exercises from ${exercises.length} total`);
+    return convertedExercises;
+  }
+
+  /**
+   * Convert enhanced exercise format to standard format for compatibility
+   */
+  private convertEnhancedToStandard(enhancedExercise: any): Exercise {
+    return {
+      id: enhancedExercise.id,
+      name: enhancedExercise.name,
+      description: enhancedExercise.description || '',
+      exercise_type: enhancedExercise.modality || 'bodyweight',
+      exercise_type_detailed: enhancedExercise.category || 'general',
+      intensity_level: enhancedExercise.difficulty_level <= 2 ? 'low' : 
+                      enhancedExercise.difficulty_level <= 4 ? 'moderate' : 'high',
+      muscle_group_primary: enhancedExercise.primary_muscles?.[0] || 'chest',
+      muscle_group_secondary: enhancedExercise.secondary_muscles || [],
+      equipment_required: enhancedExercise.equipment_required || [],
+      injury_contraindications: enhancedExercise.contraindications || [],
+      difficulty_level: enhancedExercise.difficulty_level <= 2 ? 'beginner' : 
+                       enhancedExercise.difficulty_level <= 4 ? 'intermediate' : 'advanced',
+      instructions: enhancedExercise.instruction_steps || [],
+      progression_data: {
+        movement_patterns: enhancedExercise.movement_patterns || [],
+        energy_systems: enhancedExercise.energy_system_emphasis || [],
+        biomechanics: enhancedExercise.biomechanical_demands || {},
+        progression_pathway: enhancedExercise.progression_pathway || [],
+        mastery_criteria: enhancedExercise.mastery_criteria || {}
+      }
+    };
+  }
+
+  /**
+   * Fallback basic filtering for legacy exercises
+   */
+  private applyBasicFiltering(exercises: any[], userProfile: UserProfile): Exercise[] {
     // Filter by available equipment
-    const equipmentFiltered = exercises.filter(exercise => {
+    const equipmentFiltered = exercises.filter((exercise: any) => {
       const required = exercise.equipment_required || [];
-      const hasEquipment = required.length === 0 || required.some(eq => userProfile.available_equipment.includes(eq));
+      const hasEquipment = required.length === 0 || required.some((eq: string) => userProfile.available_equipment.includes(eq));
       return hasEquipment;
     });
     console.log('🏋️ After equipment filter:', equipmentFiltered.length);
 
     // Filter out contraindicated exercises based on injury history
-    const injuryFiltered = equipmentFiltered.filter(exercise => {
+    const injuryFiltered = equipmentFiltered.filter((exercise: any) => {
       const contraindications = exercise.injury_contraindications || [];
       const userInjuries = userProfile.injury_history_summary.map((injury: any) => injury.type);
       
-      const isContraindicated = contraindications.some(contra => userInjuries.includes(contra));
+      const isContraindicated = contraindications.some((contra: string) => userInjuries.includes(contra));
       return !isContraindicated;
     });
     console.log('🩹 After injury filter:', injuryFiltered.length);
