@@ -596,6 +596,103 @@ class PhoenixWorkoutEngine {
       order,
       exercises: selectedExercises
     };
+  /**
+   * Builds a dynamic superset block with timing constraints
+   */
+  private buildDynamicSupersetBlock(exercises: Exercise[], userProfile: UserProfile, order: number, targetMinutes: number): WorkoutBlock {
+    console.log(`🏗️ Building dynamic superset block for ${targetMinutes} minutes`);
+    
+    const strengthExercises = exercises.filter(ex => 
+      ex.exercise_type === 'strength' && 
+      ex.intensity_level !== 'low'
+    );
+
+    console.log('💪 Available strength exercises for supersets:', strengthExercises.length);
+
+    const selectedExercises: ExerciseWithParams[] = [];
+    
+    // Calculate work parameters based on time constraint
+    const workTime = 45; // seconds per exercise
+    const restTime = 30; // seconds between exercises
+    const supersetRest = 90; // seconds between supersets
+    
+    // Determine number of supersets and exercises per superset
+    const timePerSuperset = (workTime * 2) + restTime + supersetRest; // 2 exercises per superset
+    const targetSupersets = Math.max(1, Math.floor((targetMinutes * 60) / timePerSuperset));
+    const exercisesNeeded = targetSupersets * 2;
+    
+    console.log(`🎯 Target: ${targetSupersets} supersets with ${exercisesNeeded} exercises`);
+
+    // Select exercises for supersets
+    const shuffledExercises = strengthExercises.sort(() => 0.5 - Math.random());
+    const selectedCount = Math.min(exercisesNeeded, shuffledExercises.length);
+    
+    for (let i = 0; i < selectedCount; i++) {
+      const exercise = shuffledExercises[i];
+      const supersetGroup = Math.floor(i / 2) + 1;
+      
+      selectedExercises.push({
+        ...exercise,
+        sets: 3,
+        reps_min: userProfile.fitness_level === 'beginner' ? 8 : 10,
+        reps_max: userProfile.fitness_level === 'beginner' ? 12 : 15,
+        rest_seconds: restTime,
+        superset_group: supersetGroup,
+        rpe_target: userProfile.fitness_level === 'beginner' ? 7 : 8
+      });
+    }
+
+    console.log(`✅ Created ${selectedExercises.length} exercises in ${Math.ceil(selectedCount / 2)} supersets`);
+
+    return {
+      name: `Dynamic Superset Complex (${Math.ceil(selectedCount / 2)} supersets)`,
+      order,
+      exercises: selectedExercises,
+      estimated_duration: targetMinutes
+    };
+  }
+
+  /**
+   * Generates timing breakdown for dynamic workouts
+   */
+  private generateTimingBreakdown(blocks: WorkoutBlock[]): any {
+    let totalExercises = 0;
+    let totalSupersets = 0;
+    let estimatedMinutes = 0;
+
+    blocks.forEach(block => {
+      totalExercises += block.exercises.length;
+      
+      // Count supersets
+      const supersetGroups = new Set(block.exercises.map(ex => ex.superset_group).filter(Boolean));
+      totalSupersets += supersetGroups.size;
+      
+      // Estimate duration
+      estimatedMinutes += block.estimated_duration || this.calculateBlockDuration(block);
+    });
+
+    return {
+      total_exercises: totalExercises,
+      total_supersets: totalSupersets,
+      estimated_minutes: Math.round(estimatedMinutes)
+    };
+  }
+
+  /**
+   * Calculates estimated duration for a workout block
+   */
+  private calculateBlockDuration(block: WorkoutBlock): number {
+    let totalSeconds = 0;
+    
+    block.exercises.forEach(exercise => {
+      const sets = exercise.sets || 1;
+      const workTime = exercise.duration_seconds || (exercise.reps || 12) * 3; // Estimate 3 seconds per rep
+      const restTime = exercise.rest_seconds || 60;
+      
+      totalSeconds += (workTime + restTime) * sets;
+    });
+    
+    return Math.round(totalSeconds / 60); // Convert to minutes
   }
 
   /**
