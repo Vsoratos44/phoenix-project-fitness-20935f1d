@@ -113,70 +113,24 @@ export default function PhoenixScoreTracker() {
     if (!user) return;
 
     setIsCalculating(true);
+    
     try {
-      // Get recent workout data for training load
-      const lastWeek = new Date();
-      lastWeek.setDate(lastWeek.getDate() - 7);
-      
-      const { data: recentWorkouts } = await supabase
-        .from('workout_sessions')
-        .select('duration_minutes, total_volume_kg, perceived_exertion')
-        .eq('user_id', user.id)
-        .gte('start_time', lastWeek.toISOString());
-
-      // Calculate component scores
-      const sleepScore = calculateSleepScore(biometricData);
-      const recoveryScore = calculateRecoveryScore(biometricData);
-      const trainingLoadScore = calculateTrainingLoadScore(recentWorkouts || []);
-      const nutritionScore = 75; // Default - would integrate with nutrition data
-      const stressScore = calculateStressScore(biometricData);
-      const hrvScore = calculateHRVScore(biometricData);
-
-      // Calculate overall score (weighted average)
-      const overallScore = Math.round(
-        (sleepScore * 0.25) +
-        (recoveryScore * 0.20) +
-        (trainingLoadScore * 0.15) +
-        (nutritionScore * 0.15) +
-        (stressScore * 0.15) +
-        (hrvScore * 0.10)
-      );
-
-      // Generate recommendation and suggested intensity
-      const { recommendation, suggestedIntensity } = generateRecommendation(
-        overallScore, sleepScore, recoveryScore, trainingLoadScore, stressScore
-      );
-
-      // Save Phoenix Score
-      const today = new Date().toISOString().split('T')[0];
-      const { error } = await supabase
-        .from('phoenix_scores')
-        .upsert({
-          user_id: user.id,
-          date: today,
-          overall_score: overallScore,
-          sleep_score: sleepScore,
-          recovery_score: recoveryScore,
-          training_load_score: trainingLoadScore,
-          nutrition_score: nutritionScore,
-          stress_score: stressScore,
-          hrv_score: hrvScore,
-          recommendation,
-          suggested_intensity: suggestedIntensity,
-          factors: {
-            biometric_data: biometricData as any,
-            recent_workouts_count: recentWorkouts?.length || 0
-          } as any
-        });
+      // Call the Phoenix Score calculator edge function
+      const { data, error } = await supabase.functions.invoke('phoenix-score-calculator', {
+        body: { userId: user.id }
+      });
 
       if (error) throw error;
 
-      await loadPhoenixScores();
-      
-      toast({
-        title: "🔥 Phoenix Score Updated!",
-        description: `Your readiness score is ${overallScore}/100. ${recommendation}`
-      });
+      if (data.success) {
+        // Reload Phoenix scores to get the newly calculated one
+        await loadPhoenixScores();
+        
+        toast({
+          title: "🔥 Phoenix Score Updated!",
+          description: `Your readiness score has been calculated using real biometric data.`
+        });
+      }
 
     } catch (error) {
       console.error('Error calculating Phoenix score:', error);
