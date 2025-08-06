@@ -19,6 +19,7 @@ import { Badge } from "@/components/ui/badge";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Separator } from "@/components/ui/separator";
 import { Progress } from "@/components/ui/progress";
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { useToast } from "@/hooks/use-toast";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
@@ -105,6 +106,9 @@ export function NutritionLogger() {
   const [servingAmount, setServingAmount] = useState(1);
   const [servingUnit, setServingUnit] = useState('');
   const [foodNotes, setFoodNotes] = useState('');
+  const [categoryFoods, setCategoryFoods] = useState<FoodItem[]>([]);
+  const [selectedCategory, setSelectedCategory] = useState<string | null>(null);
+  const [categoryModalOpen, setCategoryModalOpen] = useState(false);
 
   const { toast } = useToast();
   const { user } = useAuth();
@@ -218,6 +222,36 @@ export function NutritionLogger() {
     } catch (error: any) {
       toast({
         title: "Search Failed",
+        description: error.message,
+        variant: "destructive",
+      });
+    }
+  };
+
+  const loadCategoryFoods = async (category: string) => {
+    try {
+      const { data: foods, error } = await supabase
+        .from('foods')
+        .select('*')
+        .eq('traffic_light_category', category)
+        .eq('is_verified', true)
+        .order('food_group')
+        .order('name');
+
+      if (error) throw error;
+      
+      const transformedFoods = foods?.map(food => ({
+        ...food,
+        serving_sizes: Array.isArray(food.serving_sizes) ? food.serving_sizes : [],
+        traffic_light_category: (food.traffic_light_category as 'green' | 'yellow' | 'red') || 'yellow'
+      })) || [];
+      
+      setCategoryFoods(transformedFoods as FoodItem[]);
+      setSelectedCategory(category);
+      setCategoryModalOpen(true);
+    } catch (error: any) {
+      toast({
+        title: "Failed to Load Category Foods",
         description: error.message,
         variant: "destructive",
       });
@@ -454,17 +488,26 @@ export function NutritionLogger() {
             </CardHeader>
             <CardContent>
               <div className="grid md:grid-cols-3 gap-4">
-                <div className="text-center p-4 rounded-lg bg-green-50 border border-green-200">
+                <div 
+                  className="text-center p-4 rounded-lg bg-green-50 border border-green-200 cursor-pointer hover:bg-green-100 transition-colors"
+                  onClick={() => loadCategoryFoods('green')}
+                >
                   <div className="w-4 h-4 bg-green-500 rounded-full mx-auto mb-2"></div>
                   <h3 className="font-semibold text-green-800">Green Foods</h3>
                   <p className="text-sm text-green-600">Most of your calories should come from these nutrient-dense, lower-calorie foods</p>
                 </div>
-                <div className="text-center p-4 rounded-lg bg-yellow-50 border border-yellow-200">
+                <div 
+                  className="text-center p-4 rounded-lg bg-yellow-50 border border-yellow-200 cursor-pointer hover:bg-yellow-100 transition-colors"
+                  onClick={() => loadCategoryFoods('yellow')}
+                >
                   <div className="w-4 h-4 bg-yellow-500 rounded-full mx-auto mb-2"></div>
                   <h3 className="font-semibold text-yellow-800">Yellow Foods</h3>
                   <p className="text-sm text-yellow-600">Lean proteins, healthy fats, and complex carbs - enjoy in moderation</p>
                 </div>
-                <div className="text-center p-4 rounded-lg bg-red-50 border border-red-200">
+                <div 
+                  className="text-center p-4 rounded-lg bg-red-50 border border-red-200 cursor-pointer hover:bg-red-100 transition-colors"
+                  onClick={() => loadCategoryFoods('red')}
+                >
                   <div className="w-4 h-4 bg-red-500 rounded-full mx-auto mb-2"></div>
                   <h3 className="font-semibold text-red-800">Red Foods</h3>
                   <p className="text-sm text-red-600">Calorie-dense foods - limit these but don't eliminate them completely</p>
@@ -761,6 +804,77 @@ export function NutritionLogger() {
           </Card>
         </TabsContent>
       </Tabs>
+
+      {/* Food Category Modal */}
+      <Dialog open={categoryModalOpen} onOpenChange={setCategoryModalOpen}>
+        <DialogContent className="max-w-4xl max-h-[80vh] overflow-y-auto">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2">
+              <div className={`w-4 h-4 rounded-full ${
+                selectedCategory === 'green' ? 'bg-green-500' :
+                selectedCategory === 'yellow' ? 'bg-yellow-500' : 'bg-red-500'
+              }`}></div>
+              {selectedCategory && selectedCategory.charAt(0).toUpperCase() + selectedCategory.slice(1)} Foods
+            </DialogTitle>
+          </DialogHeader>
+          
+          <div className="space-y-6">
+            {/* Group foods by food_group */}
+            {categoryFoods.length > 0 ? (
+              (() => {
+                const groupedFoods = categoryFoods.reduce((groups: { [key: string]: FoodItem[] }, food) => {
+                  const group = food.food_group || 'Other';
+                  if (!groups[group]) groups[group] = [];
+                  groups[group].push(food);
+                  return groups;
+                }, {});
+
+                return Object.entries(groupedFoods).map(([group, foods]) => (
+                  <div key={group}>
+                    <h3 className="text-lg font-semibold mb-3 text-foreground">{group}</h3>
+                    <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-3">
+                      {foods.map((food: FoodItem) => (
+                        <div
+                          key={food.id}
+                          className="p-3 border rounded-lg hover:bg-muted/50 transition-colors cursor-pointer"
+                          onClick={() => {
+                            setSelectedFood(food);
+                            const servingSizes = Array.isArray(food.serving_sizes) ? food.serving_sizes : [];
+                            setServingUnit(servingSizes[0]?.unit || 'g');
+                            setCategoryModalOpen(false);
+                            // Switch to the log tab
+                            const tabsTrigger = document.querySelector('[value="log"]') as HTMLElement;
+                            tabsTrigger?.click();
+                          }}
+                        >
+                          <div className="flex items-center justify-between mb-2">
+                            <h4 className="font-medium text-sm">{food.name}</h4>
+                            <Badge variant="outline" className="text-xs">
+                              {food.calories_per_100g} cal/100g
+                            </Badge>
+                          </div>
+                          {food.brand && (
+                            <p className="text-xs text-muted-foreground mb-1">{food.brand}</p>
+                          )}
+                          <div className="text-xs text-muted-foreground">
+                            P: {Math.round(food.protein_per_100g || 0)}g • 
+                            C: {Math.round(food.carbs_per_100g || 0)}g • 
+                            F: {Math.round(food.fat_per_100g || 0)}g
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                ));
+              })()
+            ) : (
+              <div className="text-center py-8">
+                <p className="text-muted-foreground">No foods found in this category.</p>
+              </div>
+            )}
+          </div>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }
