@@ -205,7 +205,9 @@ export default function PhoenixSession({ onExit, initialWorkout }: PhoenixSessio
       }, 1000);
       return () => clearTimeout(timer);
     } else if (sessionPhase === 'countdown' && countdown === 0) {
+      console.log('🏃‍♂️ Moving to warmup phase');
       setSessionPhase('warmup');
+      setIsSessionActive(true);
       addAICoachingMessage('motivation', "Let's start with your warmup! Focus on activation and mobility.", 'high');
     }
   }, [sessionPhase, countdown]);
@@ -362,6 +364,8 @@ export default function PhoenixSession({ onExit, initialWorkout }: PhoenixSessio
   };
 
   const addAICoachingMessage = (type: AICoachingMessage['type'], message: string, priority: AICoachingMessage['priority'] = 'medium') => {
+    console.log('🤖 AI Coach Message:', { type, message, priority });
+    
     const newMessage: AICoachingMessage = {
       id: Date.now().toString(),
       type,
@@ -370,8 +374,8 @@ export default function PhoenixSession({ onExit, initialWorkout }: PhoenixSessio
       priority,
       exercise_context: getCurrentExercise()?.name
     };
-    
-    setAiCoachingMessages(prev => [...prev, newMessage].slice(-10)); // Keep last 10 messages
+
+    setAiCoachingMessages(prev => [newMessage, ...prev.slice(0, 9)]); // Keep latest 10 messages
     
     // Speak high priority messages
     if (priority === 'high' || priority === 'critical') {
@@ -384,7 +388,12 @@ export default function PhoenixSession({ onExit, initialWorkout }: PhoenixSessio
   };
 
   const startPhoenixSession = async () => {
-    if (!user || !sessionData) return;
+    console.log('🔥 Starting Phoenix Session...', { user: !!user, sessionData: !!sessionData });
+    
+    if (!user || !sessionData) {
+      console.error('Missing user or session data:', { user: !!user, sessionData: !!sessionData });
+      return;
+    }
 
     setSessionPhase('countdown');
     setCountdown(3);
@@ -994,19 +1003,6 @@ export default function PhoenixSession({ onExit, initialWorkout }: PhoenixSessio
                         ))}
                       </ul>
                     </div>
-                  )}
-
-                  {/* Rest Timer */}
-                  {isResting && (
-                    <Card className="bg-gradient-to-r from-blue-50 to-indigo-50 border-blue-200">
-                      <CardContent className="text-center py-6">
-                        <Timer className="h-8 w-8 text-blue-600 mx-auto mb-2" />
-                        <div className="text-3xl font-bold text-blue-600 mb-2">
-                          {Math.floor(restTimer / 60)}:{(restTimer % 60).toString().padStart(2, '0')}
-                        </div>
-                        <div className="text-sm text-blue-700">Rest Time Remaining</div>
-                      </CardContent>
-                    </Card>
                   )}
 
                   {/* Rest Timer with Recovery Coaching */}
