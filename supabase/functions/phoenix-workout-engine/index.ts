@@ -264,33 +264,9 @@ class PhoenixWorkoutEngine {
    * Gets exercises filtered by equipment and injury contraindications with enhanced medical safety
    */
   private async getFilteredExercises(userProfile: UserProfile): Promise<Exercise[]> {
-    console.log('🔍 Fetching enhanced exercises for user profile:', userProfile.user_id);
+    console.log('🔍 Fetching exercises for user profile:', userProfile.user_id);
     
-    // Try enhanced exercises first
-    const { data: enhancedExercises, error: enhancedError } = await this.supabase
-      .from('enhanced_exercises')
-      .select(`
-        *,
-        medical_exercise_compatibility!inner(
-          medical_condition,
-          compatibility_level,
-          required_modifications,
-          medical_reasoning
-        )
-      `)
-      .eq('is_approved', true);
-
-    if (enhancedError) {
-      console.warn('⚠️ Enhanced exercises not available, falling back to basic:', enhancedError);
-    }
-
-    if (enhancedExercises && enhancedExercises.length > 0) {
-      console.log('✅ Using enhanced exercises with medical safety filtering');
-      return this.applyEnhancedMedicalFiltering(enhancedExercises, userProfile);
-    }
-
-    // Fallback to basic exercises
-    console.log('📊 Falling back to basic exercises');
+    // Use the main exercises table which has more data
     const { data: exercises, error } = await this.supabase
       .from('exercises')
       .select('*')
@@ -299,7 +275,7 @@ class PhoenixWorkoutEngine {
     console.log('📊 Raw exercise count:', exercises?.length || 0);
     if (error) {
       console.error('❌ Error fetching exercises:', error);
-      return [];
+      return this.getDefaultExercises();
     }
 
     if (!exercises || exercises.length === 0) {
@@ -307,6 +283,7 @@ class PhoenixWorkoutEngine {
       return this.getDefaultExercises();
     }
 
+    // Apply filtering for equipment and safety
     return this.applyBasicFiltering(exercises, userProfile);
   }
 
