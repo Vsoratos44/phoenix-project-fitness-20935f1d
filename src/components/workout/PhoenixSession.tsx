@@ -99,13 +99,17 @@ interface WorkoutSessionData {
 }
 
 interface BiometricData {
+  heartRate?: number;
   heart_rate?: number;
   hrv?: number;
+  caloriesBurned?: number;
   calories_burned?: number;
   active_minutes?: number;
   steps?: number;
   power_output?: number;
   lactate_threshold?: number;
+  vo2Max?: number;
+  recoveryScore?: number;
 }
 
 interface AICoachingMessage {
@@ -127,6 +131,11 @@ export default function PhoenixSession({ onExit, initialWorkout }: PhoenixSessio
   const { toast } = useToast();
   const navigate = useNavigate();
   
+  // Session flow states
+  const [sessionPhase, setSessionPhase] = useState<'intro' | 'countdown' | 'warmup' | 'workout' | 'cooldown' | 'complete'>('intro');
+  const [countdown, setCountdown] = useState(3);
+  const [workoutTimer, setWorkoutTimer] = useState(0);
+  
   const [sessionData, setSessionData] = useState<WorkoutSessionData | null>(null);
   const [currentBlockIndex, setCurrentBlockIndex] = useState(0);
   const [currentExerciseIndex, setCurrentExerciseIndex] = useState(0);
@@ -141,7 +150,12 @@ export default function PhoenixSession({ onExit, initialWorkout }: PhoenixSessio
   const [phoenixAdaptations, setPhoenixAdaptations] = useState<string[]>([]);
   
   // Enhanced Phoenix features
-  const [realTimeBiometrics, setRealTimeBiometrics] = useState<BiometricData>({});
+  const [realTimeBiometrics, setRealTimeBiometrics] = useState<BiometricData>({
+    heartRate: 75 + Math.floor(Math.random() * 30), // Simulated data
+    caloriesBurned: 0,
+    vo2Max: 45,
+    recoveryScore: 85
+  });
   const [aiCoachingMessages, setAiCoachingMessages] = useState<AICoachingMessage[]>([]);
   const [isLiveCoachingActive, setIsLiveCoachingActive] = useState(true);
   const [wearableConnected, setWearableConnected] = useState(false);
@@ -159,8 +173,8 @@ export default function PhoenixSession({ onExit, initialWorkout }: PhoenixSessio
     totalVolume: 0,
     setsCompleted: 0,
     caloriesBurned: 0,
-    averageHeartRate: 0,
-    peakHeartRate: 0,
+    averageHeartRate: 75,
+    peakHeartRate: 85,
     totalRestTime: 0,
     workoutIntensity: 0,
     phoenixScore: 0,
@@ -172,15 +186,40 @@ export default function PhoenixSession({ onExit, initialWorkout }: PhoenixSessio
   const audioContextRef = useRef<AudioContext | null>(null);
   const speechSynthesisRef = useRef<SpeechSynthesis | null>(null);
 
-  // Check for workout and load or redirect
+  // Initialize workout data and audio
   useEffect(() => {
     if (initialWorkout) {
+      console.log('Phoenix Session - Loading initial workout:', initialWorkout);
       setSessionData(initialWorkout);
       initializeAudioCoaching();
     } else {
-      checkForWorkoutOrRedirect();
+      console.log('Phoenix Session - No initial workout provided');
     }
   }, [initialWorkout]);
+
+  // Countdown timer
+  useEffect(() => {
+    if (sessionPhase === 'countdown' && countdown > 0) {
+      const timer = setTimeout(() => {
+        setCountdown(prev => prev - 1);
+      }, 1000);
+      return () => clearTimeout(timer);
+    } else if (sessionPhase === 'countdown' && countdown === 0) {
+      setSessionPhase('warmup');
+      addAICoachingMessage('motivation', "Let's start with your warmup! Focus on activation and mobility.", 'high');
+    }
+  }, [sessionPhase, countdown]);
+
+  // Workout timer
+  useEffect(() => {
+    let interval: NodeJS.Timeout;
+    if (isSessionActive) {
+      interval = setInterval(() => {
+        setWorkoutTimer(prev => prev + 1);
+      }, 1000);
+    }
+    return () => clearInterval(interval);
+  }, [isSessionActive]);
 
   const checkForWorkoutOrRedirect = async () => {
     // Check if user has any active workout or redirect to AI generator
@@ -347,9 +386,11 @@ export default function PhoenixSession({ onExit, initialWorkout }: PhoenixSessio
   const startPhoenixSession = async () => {
     if (!user || !sessionData) return;
 
+    setSessionPhase('countdown');
+    setCountdown(3);
+    
     const startTime = new Date();
     setSessionStartTime(startTime);
-    setIsSessionActive(true);
 
     try {
       // Create Phoenix session in database
@@ -385,6 +426,31 @@ export default function PhoenixSession({ onExit, initialWorkout }: PhoenixSessio
         description: "Failed to start Phoenix session",
         variant: "destructive"
       });
+    }
+  };
+
+  const formatTime = (seconds: number) => {
+    const mins = Math.floor(seconds / 60);
+    const secs = seconds % 60;
+    return `${mins}:${secs.toString().padStart(2, '0')}`;
+  };
+
+  const moveToNextPhase = () => {
+    switch (sessionPhase) {
+      case 'warmup':
+        setSessionPhase('workout');
+        setIsSessionActive(true);
+        addAICoachingMessage('motivation', "Warmup complete! Time to crush your workout. Let's show what you're made of!", 'high');
+        break;
+      case 'workout':
+        setSessionPhase('cooldown');
+        addAICoachingMessage('motivation', "Outstanding workout! Time to cool down and recover properly.", 'high');
+        break;
+      case 'cooldown':
+        setSessionPhase('complete');
+        setIsSessionActive(false);
+        addAICoachingMessage('motivation', "Phoenix Session complete! You've achieved greatness today. Be proud of your effort!", 'high');
+        break;
     }
   };
 
@@ -663,6 +729,123 @@ export default function PhoenixSession({ onExit, initialWorkout }: PhoenixSessio
   const completedExercises = sessionData.blocks.slice(0, currentBlockIndex).reduce((sum, block) => sum + block.exercises.length, 0) + currentExerciseIndex;
   const progressPercentage = (completedExercises / totalExercises) * 100;
 
+  // Phase-specific rendering
+  if (sessionPhase === 'intro') {
+    return (
+      <div className="container mx-auto p-6 max-w-4xl">
+        <div className="min-h-screen flex items-center justify-center">
+          <Card className="bg-gradient-to-br from-orange-50 to-red-50 border-orange-200 text-center p-8">
+            <CardContent className="space-y-8">
+              <div className="space-y-4">
+                <Flame className="h-24 w-24 text-orange-600 mx-auto animate-pulse" />
+                <h1 className="text-6xl font-bold bg-gradient-to-r from-orange-600 to-red-600 bg-clip-text text-transparent">
+                  LET'S GO!
+                </h1>
+                <p className="text-xl text-orange-700 max-w-md mx-auto">
+                  Your Phoenix AI coach is ready to guide you through an extraordinary workout experience
+                </p>
+              </div>
+              
+              <div className="space-y-4">
+                <div className="grid grid-cols-2 gap-4 max-w-md mx-auto">
+                  <div className="text-center p-4 bg-white/50 rounded-lg">
+                    <Timer className="h-6 w-6 mx-auto mb-2 text-orange-600" />
+                    <div className="font-semibold">{formatTime(workoutTimer)}</div>
+                    <div className="text-sm text-muted-foreground">Total Time</div>
+                  </div>
+                  <div className="text-center p-4 bg-white/50 rounded-lg">
+                    <Heart className="h-6 w-6 mx-auto mb-2 text-red-600" />
+                    <div className="font-semibold">{realTimeBiometrics.heartRate} BPM</div>
+                    <div className="text-sm text-muted-foreground">Heart Rate</div>
+                  </div>
+                </div>
+                
+                <Button 
+                  onClick={startPhoenixSession} 
+                  size="lg"
+                  className="bg-gradient-to-r from-orange-600 to-red-600 hover:from-orange-700 hover:to-red-700 text-white px-12 py-6 text-xl"
+                >
+                  <Play className="h-6 w-6 mr-3" />
+                  Start Phoenix Session
+                </Button>
+              </div>
+            </CardContent>
+          </Card>
+        </div>
+      </div>
+    );
+  }
+
+  if (sessionPhase === 'countdown') {
+    return (
+      <div className="container mx-auto p-6 max-w-4xl">
+        <div className="min-h-screen flex items-center justify-center">
+          <Card className="bg-gradient-to-br from-orange-50 to-red-50 border-orange-200 text-center p-12">
+            <CardContent className="space-y-8">
+              <div className="space-y-6">
+                <div className="text-9xl font-bold text-orange-600 animate-pulse">
+                  {countdown || 'GO!'}
+                </div>
+                <p className="text-2xl text-orange-700">
+                  {countdown > 0 ? 'Get ready...' : 'Let\'s begin your warmup!'}
+                </p>
+              </div>
+              
+              <div className="text-lg text-muted-foreground">
+                Phoenix AI Coach is activating...
+              </div>
+            </CardContent>
+          </Card>
+        </div>
+      </div>
+    );
+  }
+
+  if (sessionPhase === 'complete') {
+    return (
+      <div className="container mx-auto p-6 max-w-4xl">
+        <div className="min-h-screen flex items-center justify-center">
+          <Card className="bg-gradient-to-br from-green-50 to-emerald-50 border-green-200 text-center p-8">
+            <CardContent className="space-y-8">
+              <div className="space-y-4">
+                <Trophy className="h-24 w-24 text-green-600 mx-auto" />
+                <h1 className="text-6xl font-bold bg-gradient-to-r from-green-600 to-emerald-600 bg-clip-text text-transparent">
+                  AMAZING!
+                </h1>
+                <p className="text-xl text-green-700 max-w-md mx-auto">
+                  Phoenix Session Complete! You've achieved greatness today.
+                </p>
+              </div>
+              
+              <div className="grid grid-cols-2 md:grid-cols-4 gap-4 max-w-2xl mx-auto">
+                <div className="text-center p-4 bg-white/50 rounded-lg">
+                  <div className="text-2xl font-bold text-green-600">{sessionStats.setsCompleted}</div>
+                  <div className="text-sm text-muted-foreground">Sets</div>
+                </div>
+                <div className="text-center p-4 bg-white/50 rounded-lg">
+                  <div className="text-2xl font-bold text-green-600">{formatTime(workoutTimer)}</div>
+                  <div className="text-sm text-muted-foreground">Time</div>
+                </div>
+                <div className="text-center p-4 bg-white/50 rounded-lg">
+                  <div className="text-2xl font-bold text-green-600">{Math.round(sessionStats.caloriesBurned)}</div>
+                  <div className="text-sm text-muted-foreground">Calories</div>
+                </div>
+                <div className="text-center p-4 bg-white/50 rounded-lg">
+                  <div className="text-2xl font-bold text-green-600">{sessionStats.adaptationsMade}</div>
+                  <div className="text-sm text-muted-foreground">Adaptations</div>
+                </div>
+              </div>
+              
+              <Button onClick={onExit} size="lg" className="px-12">
+                Complete Session
+              </Button>
+            </CardContent>
+          </Card>
+        </div>
+      </div>
+    );
+  }
+
   return (
     <div className="container mx-auto p-6 space-y-6 max-w-7xl">
       {/* Session Header */}
@@ -672,29 +855,34 @@ export default function PhoenixSession({ onExit, initialWorkout }: PhoenixSessio
             <Flame className="h-6 w-6 text-orange-600" />
             {sessionData.name}
             <Badge variant="secondary" className="ml-auto bg-orange-100 text-orange-800">
-              Phoenix Engine Active
+              {sessionPhase === 'warmup' ? 'Warming Up' : 
+               sessionPhase === 'workout' ? 'Workout Active' : 
+               sessionPhase === 'cooldown' ? 'Cool Down' : 'Phoenix Engine Active'}
             </Badge>
             <Button variant="ghost" size="sm" onClick={onExit}>
               Exit Session
             </Button>
           </CardTitle>
           <CardDescription className="text-orange-700">
-            {isSessionActive ? "AI-powered session in progress" : "Ready to unleash your potential"}
+            {sessionPhase === 'warmup' ? "Preparing your body for peak performance" :
+             sessionPhase === 'workout' ? "AI-powered session in progress" :
+             sessionPhase === 'cooldown' ? "Recovery and restoration phase" :
+             "Ready to unleash your potential"}
           </CardDescription>
         </CardHeader>
         <CardContent>
           <div className="grid md:grid-cols-4 gap-4 mb-4">
             <div className="text-center">
-              <div className="text-2xl font-bold text-orange-600">{sessionStats.setsCompleted}</div>
-              <div className="text-sm text-muted-foreground">Sets Complete</div>
+              <div className="text-2xl font-bold text-orange-600">{formatTime(workoutTimer)}</div>
+              <div className="text-sm text-muted-foreground">Total Time</div>
             </div>
             <div className="text-center">
-              <div className="text-2xl font-bold text-red-600">{Math.round(sessionStats.totalVolume)}</div>
-              <div className="text-sm text-muted-foreground">Total Volume (kg)</div>
-            </div>
-            <div className="text-center">
-              <div className="text-2xl font-bold text-orange-600">{Math.round(sessionStats.caloriesBurned)}</div>
+              <div className="text-2xl font-bold text-red-600">{Math.round(sessionStats.caloriesBurned)}</div>
               <div className="text-sm text-muted-foreground">Calories</div>
+            </div>
+            <div className="text-center">
+              <div className="text-2xl font-bold text-orange-600">{realTimeBiometrics.heartRate} BPM</div>
+              <div className="text-sm text-muted-foreground">Heart Rate</div>
             </div>
             <div className="text-center">
               <div className="text-2xl font-bold text-red-600">{sessionStats.adaptationsMade}</div>
@@ -702,9 +890,11 @@ export default function PhoenixSession({ onExit, initialWorkout }: PhoenixSessio
             </div>
           </div>
           
-          <Progress value={progressPercentage} className="mb-2" />
+          <Progress value={sessionPhase === 'warmup' ? 10 : sessionPhase === 'cooldown' ? 90 : progressPercentage} className="mb-2" />
           <div className="text-sm text-muted-foreground text-center">
-            Exercise {completedExercises} of {totalExercises} • {Math.round(progressPercentage)}% Complete
+            {sessionPhase === 'warmup' ? 'Warmup Phase' :
+             sessionPhase === 'cooldown' ? 'Cool Down Phase' :
+             `Exercise ${completedExercises} of ${totalExercises} • ${Math.round(progressPercentage)}% Complete`}
           </div>
         </CardContent>
       </Card>
@@ -819,12 +1009,52 @@ export default function PhoenixSession({ onExit, initialWorkout }: PhoenixSessio
                     </Card>
                   )}
 
+                  {/* Rest Timer with Recovery Coaching */}
+                  {isResting && (
+                    <Card className="bg-gradient-to-r from-blue-50 to-indigo-50 border-blue-200">
+                      <CardContent className="text-center py-6">
+                        <Timer className="h-8 w-8 text-blue-600 mx-auto mb-2" />
+                        <div className="text-4xl font-bold text-blue-600 mb-2">
+                          {Math.floor(restTimer / 60)}:{(restTimer % 60).toString().padStart(2, '0')}
+                        </div>
+                        <div className="text-sm text-blue-700 mb-4">Rest Time Remaining</div>
+                        
+                        <div className="space-y-2 text-sm text-blue-600">
+                          <p>🫁 Take deep breaths to aid recovery</p>
+                          <p>💧 Hydrate and visualize your next set</p>
+                          <p>🧠 Mental preparation is key</p>
+                        </div>
+                      </CardContent>
+                    </Card>
+                  )}
+
                   {/* Action Buttons */}
                   <div className="flex gap-2">
-                    {!isResting && (
+                    {sessionPhase === 'warmup' && (
+                      <Button onClick={moveToNextPhase} className="flex-1">
+                        <SkipForward className="h-4 w-4 mr-2" />
+                        Start Workout
+                      </Button>
+                    )}
+                    
+                    {sessionPhase === 'workout' && !isResting && (
                       <Button onClick={completeSet} className="flex-1">
                         <CheckCircle2 className="h-4 w-4 mr-2" />
                         Complete Set
+                      </Button>
+                    )}
+                    
+                    {sessionPhase === 'workout' && completedExercises >= totalExercises && (
+                      <Button onClick={moveToNextPhase} className="flex-1">
+                        <SkipForward className="h-4 w-4 mr-2" />
+                        Begin Cool Down
+                      </Button>
+                    )}
+                    
+                    {sessionPhase === 'cooldown' && (
+                      <Button onClick={moveToNextPhase} className="flex-1">
+                        <Trophy className="h-4 w-4 mr-2" />
+                        Complete Session
                       </Button>
                     )}
                     
@@ -834,6 +1064,14 @@ export default function PhoenixSession({ onExit, initialWorkout }: PhoenixSessio
                     >
                       <RotateCcw className="h-4 w-4 mr-2" />
                       Adapt
+                    </Button>
+                    
+                    <Button 
+                      variant="outline" 
+                      onClick={() => setShowFeedbackDialog(true)}
+                    >
+                      <MessageCircle className="h-4 w-4 mr-2" />
+                      Feedback
                     </Button>
                   </div>
                 </CardContent>
