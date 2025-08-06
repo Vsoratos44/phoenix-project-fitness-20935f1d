@@ -1,0 +1,27 @@
+-- Add basic workout archetypes if they don't exist
+INSERT INTO workout_archetypes (name, description, structure_template, metabolic_emphasis, strength_emphasis, primary_goals, fitness_level_range, phoenix_score_range) VALUES
+('Strength Foundation', 'Focus on building fundamental strength with compound movements', 
+ '{"blocks": ["warmup", "strength", "accessory_work", "cooldown"]}'::jsonb, 
+ 0.3, 0.7, 
+ ARRAY['build_muscle', 'increase_strength'], 
+ ARRAY['beginner', 'intermediate'], 
+ '{"min": 60, "max": 100}'::jsonb),
+('Metabolic Blast', 'High-intensity metabolic conditioning for fat loss and endurance', 
+ '{"blocks": ["gentle_warmup", "hiit_intervals", "metabolic_circuit", "deep_stretch"]}'::jsonb, 
+ 0.8, 0.2, 
+ ARRAY['lose_weight', 'improve_endurance'], 
+ ARRAY['intermediate'], 
+ '{"min": 70, "max": 100}'::jsonb),
+('Full Body Balanced', 'Well-rounded workout targeting all muscle groups', 
+ '{"blocks": ["warmup", "compound_strength", "cardio_intervals", "cooldown"]}'::jsonb, 
+ 0.5, 0.5, 
+ ARRAY['general_fitness', 'build_muscle'], 
+ ARRAY['beginner', 'intermediate'], 
+ '{"min": 50, "max": 100}'::jsonb),
+('Recovery Flow', 'Active recovery with mobility and gentle movement', 
+ '{"blocks": ["gentle_warmup", "mobility_flow", "deep_stretch"]}'::jsonb, 
+ 0.2, 0.1, 
+ ARRAY['general_fitness'], 
+ ARRAY['beginner', 'intermediate'], 
+ '{"min": 20, "max": 60}'::jsonb)
+ON CONFLICT (name) DO NOTHING;
