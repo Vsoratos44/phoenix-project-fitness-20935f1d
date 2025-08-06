@@ -12,6 +12,7 @@ import { useToast } from "@/hooks/use-toast";
 import { useAuth } from "@/hooks/useAuth";
 import { supabase } from "@/integrations/supabase/client";
 import RealTimeAdaptation from "./RealTimeAdaptation";
+import PhoenixSession from "./PhoenixSession";
 import {
   Play,
   Pause,
@@ -101,6 +102,7 @@ export default function EnhancedWorkoutSession() {
   const [restTimer, setRestTimer] = useState(0);
   const [isResting, setIsResting] = useState(false);
   const [sessionNotes, setSessionNotes] = useState("");
+  const [phoenixSessionActive, setPhoenixSessionActive] = useState(false);
   const [phoenixAdaptations, setPhoenixAdaptations] = useState<string[]>([]);
   
   // Enhanced tracking features
@@ -676,6 +678,12 @@ export default function EnhancedWorkoutSession() {
   const completedExercises = sessionData.blocks.slice(0, currentBlockIndex).reduce((sum, block) => sum + block.exercises.length, 0) + currentExerciseIndex;
   const progressPercentage = (completedExercises / totalExercises) * 100;
 
+  
+  // Show Phoenix Session if activated
+  if (phoenixSessionActive) {
+    return <PhoenixSession onExit={() => setPhoenixSessionActive(false)} />;
+  }
+
   return (
     <div className="container mx-auto p-6 space-y-6">
       {/* Enhanced Session Header */}
@@ -733,9 +741,17 @@ export default function EnhancedWorkoutSession() {
                 
                 {!isSessionActive ? (
                   <div className="flex gap-2">
-                    <Button onClick={startSession} size="lg" className="bg-orange-600 hover:bg-orange-700">
-                      <Play className="mr-2 h-4 w-4" />
+                    <Button 
+                      onClick={() => setPhoenixSessionActive(true)} 
+                      size="lg" 
+                      className="bg-orange-600 hover:bg-orange-700"
+                    >
+                      <Flame className="mr-2 h-4 w-4" />
                       Start Phoenix Session
+                    </Button>
+                    <Button onClick={startSession} variant="outline" size="lg">
+                      <Play className="mr-2 h-4 w-4" />
+                      Start Session
                     </Button>
                   </div>
                 ) : (
