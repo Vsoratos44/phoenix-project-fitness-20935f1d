@@ -12,7 +12,7 @@ import { useToast } from "@/hooks/use-toast";
 import { useAuth } from "@/hooks/useAuth";
 import { supabase } from "@/integrations/supabase/client";
 import RealTimeAdaptation from "./RealTimeAdaptation";
-import PhoenixSession from "./PhoenixSession";
+import PhoenixWorkoutLoader from "./PhoenixWorkoutLoader";
 import {
   Play,
   Pause,
@@ -681,7 +681,7 @@ export default function EnhancedWorkoutSession() {
   
   // Show Phoenix Session if activated
   if (phoenixSessionActive) {
-    return <PhoenixSession onExit={() => setPhoenixSessionActive(false)} />;
+    return <PhoenixWorkoutLoader onExit={() => setPhoenixSessionActive(false)} />;
   }
 
   return (

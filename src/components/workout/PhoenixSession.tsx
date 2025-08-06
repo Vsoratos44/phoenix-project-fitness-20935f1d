@@ -1,4 +1,5 @@
 import { useState, useEffect, useCallback, useRef } from "react";
+import { useNavigate } from "react-router-dom";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -12,6 +13,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/u
 import { useToast } from "@/hooks/use-toast";
 import { useAuth } from "@/hooks/useAuth";
 import { supabase } from "@/integrations/supabase/client";
+import { AIWorkoutGenerator } from "@/components/ai/AIWorkoutGenerator";
 import {
   Play,
   Pause,
@@ -117,11 +119,13 @@ interface AICoachingMessage {
 
 interface PhoenixSessionProps {
   onExit: () => void;
+  initialWorkout?: any;
 }
 
-export default function PhoenixSession({ onExit }: PhoenixSessionProps) {
+export default function PhoenixSession({ onExit, initialWorkout }: PhoenixSessionProps) {
   const { user } = useAuth();
   const { toast } = useToast();
+  const navigate = useNavigate();
   
   const [sessionData, setSessionData] = useState<WorkoutSessionData | null>(null);
   const [currentBlockIndex, setCurrentBlockIndex] = useState(0);
@@ -168,13 +172,50 @@ export default function PhoenixSession({ onExit }: PhoenixSessionProps) {
   const audioContextRef = useRef<AudioContext | null>(null);
   const speechSynthesisRef = useRef<SpeechSynthesis | null>(null);
 
-  // Load workout session data
+  // Check for workout and load or redirect
   useEffect(() => {
-    loadPhoenixWorkout();
-    initializeAudioCoaching();
-  }, []);
+    if (initialWorkout) {
+      setSessionData(initialWorkout);
+      initializeAudioCoaching();
+    } else {
+      checkForWorkoutOrRedirect();
+    }
+  }, [initialWorkout]);
 
-  const loadPhoenixWorkout = async () => {
+  const checkForWorkoutOrRedirect = async () => {
+    // Check if user has any active workout or redirect to AI generator
+    try {
+      // Check for any recent workout session
+      const today = new Date().toISOString().split('T')[0];
+      const { data: recentWorkout } = await supabase
+        .from('workout_sessions')
+        .select('*')
+        .eq('user_id', user?.id)
+        .gte('created_at', today)
+        .order('created_at', { ascending: false })
+        .limit(1)
+        .maybeSingle();
+
+      if (recentWorkout) {
+        // Load existing workout
+        loadPhoenixWorkout(recentWorkout.id);
+      } else {
+        // No workout found, redirect to AI generator
+        toast({
+          title: "No Workout Found",
+          description: "Redirecting to AI Workout Generator to create your Phoenix session...",
+        });
+        navigate('/ai-workout');
+        return;
+      }
+    } catch (error) {
+      console.error('Error checking for active workout:', error);
+      // Fallback to AI generator
+      navigate('/ai-workout');
+    }
+  };
+
+  const loadPhoenixWorkout = async (workoutId?: string) => {
     // Load AI-generated Phoenix workout
     try {
       const { data, error } = await supabase.functions.invoke('phoenix-workout-engine', {

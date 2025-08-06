@@ -87,7 +87,12 @@ interface WorkoutPreferences {
   customInstructions: string;
 }
 
-export function AIWorkoutGenerator() {
+interface AIWorkoutGeneratorProps {
+  onWorkoutGenerated?: (workout: any) => void;
+  redirectToPhoenix?: boolean;
+}
+
+export function AIWorkoutGenerator({ onWorkoutGenerated, redirectToPhoenix }: AIWorkoutGeneratorProps = {}) {
   const { user } = useAuth();
   const { toast } = useToast();
   const [isGenerating, setIsGenerating] = useState(false);
@@ -816,12 +821,18 @@ export function AIWorkoutGenerator() {
                   <TabsContent value="actions" className="space-y-4">
                     <div className="grid gap-4">
                       <Button 
-                        onClick={startWorkoutSession} 
+                        onClick={() => {
+                          if (onWorkoutGenerated) {
+                            onWorkoutGenerated(generatedWorkout);
+                          } else {
+                            startWorkoutSession();
+                          }
+                        }} 
                         className="w-full bg-green-600 hover:bg-green-700"
                         size="lg"
                       >
                         <Play className="mr-2 h-4 w-4" />
-                        Start Workout Session
+                        {redirectToPhoenix ? 'Start Phoenix Session' : 'Start Workout Session'}
                       </Button>
                       
                       <Button 
